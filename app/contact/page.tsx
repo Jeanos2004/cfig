@@ -1,11 +1,35 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { ChevronRight, MapPin, Phone, Mail, Clock, Send } from "lucide-react";
+import { ChevronRight, MapPin, Phone, Mail, Clock, Send, CheckCircle } from "lucide-react";
 import { motion } from "framer-motion";
+import { db } from "@/lib/db";
 
 export default function ContactPage() {
+  const [formData, setFormData] = useState({ fullName: "", email: "", subject: "", message: "" });
+  const [isSubmitted, setIsSubmitted] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    await new Promise(resolve => setTimeout(resolve, 800));
+    db.addMessage({
+      fullName: formData.fullName,
+      email: formData.email,
+      subject: formData.subject,
+      message: formData.message,
+    });
+    setIsSubmitting(false);
+    setIsSubmitted(true);
+  };
+
   return (
     <>
       {/* Hero Section */}
@@ -39,33 +63,53 @@ export default function ContactPage() {
               <p className="text-gray-600 mb-8">
                 Vous avez une question sur nos formations ou souhaitez un accompagnement sur mesure ? Remplissez le formulaire ci-dessous et notre équipe vous répondra rapidement.
               </p>
-              
-              <form className="space-y-6" onSubmit={(e) => { e.preventDefault(); alert("Message envoyé !"); }}>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Nom complet *</label>
-                    <input type="text" required className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent outline-none transition-shadow" placeholder="Votre nom" />
+
+              {isSubmitted ? (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  className="flex flex-col items-center text-center py-8"
+                >
+                  <div className="w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <CheckCircle className="w-8 h-8" />
                   </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Email *</label>
-                    <input type="email" required className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent outline-none transition-shadow" placeholder="votre@email.com" />
+                  <h3 className="text-xl font-heading font-bold text-[var(--color-primary)] mb-2">Message envoyé !</h3>
+                  <p className="text-gray-600 mb-6">Merci de nous avoir contacté. Notre équipe vous répondra très prochainement.</p>
+                  <button
+                    onClick={() => { setIsSubmitted(false); setFormData({ fullName: "", email: "", subject: "", message: "" }); }}
+                    className="px-6 py-2 border-2 border-[var(--color-primary)] text-[var(--color-primary)] text-sm font-bold uppercase tracking-wider hover:bg-[var(--color-primary)] hover:text-white transition-colors"
+                  >
+                    Envoyer un autre message
+                  </button>
+                </motion.div>
+              ) : (
+                <form className="space-y-6" onSubmit={handleSubmit}>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Nom complet *</label>
+                      <input name="fullName" type="text" required value={formData.fullName} onChange={handleChange} className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent outline-none transition-shadow" placeholder="Votre nom" />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Email *</label>
+                      <input name="email" type="email" required value={formData.email} onChange={handleChange} className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent outline-none transition-shadow" placeholder="votre@email.com" />
+                    </div>
                   </div>
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Sujet *</label>
-                  <input type="text" required className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent outline-none transition-shadow" placeholder="Objet de votre message" />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Message *</label>
-                  <textarea rows={5} required className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent outline-none transition-shadow" placeholder="Comment pouvons-nous vous aider ?"></textarea>
-                </div>
-                
-                <button type="submit" className="inline-flex items-center px-8 py-3 bg-[var(--color-primary)] text-white rounded-md font-medium hover:bg-gray-800 transition-colors">
-                  Envoyer le message <Send className="w-4 h-4 ml-2" />
-                </button>
-              </form>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Sujet *</label>
+                    <input name="subject" type="text" required value={formData.subject} onChange={handleChange} className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent outline-none transition-shadow" placeholder="Objet de votre message" />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Message *</label>
+                    <textarea name="message" rows={5} required value={formData.message} onChange={handleChange} className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent outline-none transition-shadow" placeholder="Comment pouvons-nous vous aider ?"></textarea>
+                  </div>
+                  
+                  <button type="submit" disabled={isSubmitting} className="inline-flex items-center px-8 py-3 bg-[var(--color-primary)] text-white rounded-md font-medium hover:bg-[var(--color-accent)] transition-colors disabled:opacity-70">
+                    {isSubmitting ? "Envoi en cours..." : <><span>Envoyer le message</span> <Send className="w-4 h-4 ml-2" /></>}
+                  </button>
+                </form>
+              )}
             </div>
             
             {/* Contact Info Column */}

@@ -16,7 +16,7 @@ import {
   Globe,
   UserCheck,
 } from "lucide-react";
-import { formationsData } from "@/lib/data";
+import { db } from "@/lib/db";
 
 const generateSlug = (text: string) => {
   return text
@@ -45,8 +45,10 @@ export default function FormationDetailPage() {
 
   useEffect(() => {
     if (params.slug) {
+      db.init();
+      const currentFormations = db.getFormations();
       let found = null;
-      for (const cat of formationsData) {
+      for (const cat of currentFormations) {
         for (const mod of cat.modules) {
           if (generateSlug(mod.titre) === params.slug) {
             found = { ...mod, categorie: cat.categorie };

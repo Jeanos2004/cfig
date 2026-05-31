@@ -1,0 +1,1375 @@
+"use client";
+
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import {
+  LayoutDashboard,
+  GraduationCap,
+  BookOpen,
+  FileText,
+  MessageSquare,
+  Mail,
+  LogOut,
+  Plus,
+  Trash2,
+  Edit3,
+  Check,
+  X,
+  Eye,
+  Lock,
+  Search,
+  Filter,
+  Layers,
+  Calendar,
+  Users,
+  Award
+} from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { db, CategorieFormations, ModuleItem, Article, InscriptionRequest, ContactMessage, Testimonial } from "@/lib/db";
+
+export default function AdminPage() {
+  const router = useRouter();
+  
+  // === AUTHENTICATION STATE ===
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [authError, setAuthError] = useState("");
+  
+  // === ACTIVE TAB STATE ===
+  const [activeTab, setActiveTab] = useState<"overview" | "inscriptions" | "formations" | "actualites" | "testimonials" | "messages">("overview");
+
+  // === DATA STATES ===
+  const [formations, setFormations] = useState<CategorieFormations[]>([]);
+  const [articles, setArticles] = useState<Article[]>([]);
+  const [inscriptions, setInscriptions] = useState<InscriptionRequest[]>([]);
+  const [messages, setMessages] = useState<ContactMessage[]>([]);
+  const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
+
+  // === SEARCH & FILTER STATES ===
+  const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState("Tous");
+
+  // === MODAL / CRUD FORM STATES ===
+  const [showAddModuleModal, setShowAddModuleModal] = useState(false);
+  const [newModuleTitle, setNewModuleTitle] = useState("");
+  const [newModuleCategory, setNewModuleCategory] = useState("");
+  const [newModuleOutils, setNewModuleOutils] = useState("");
+  const [editingModule, setEditingModule] = useState<{ catIndex: number; modIndex: number; oldTitle: string } | null>(null);
+
+  const [showAddArticleModal, setShowAddArticleModal] = useState(false);
+  const [articleTitle, setArticleTitle] = useState("");
+  const [articleExcerpt, setArticleExcerpt] = useState("");
+  const [articleCategory, setArticleCategory] = useState("");
+  const [articleAuthor, setArticleAuthor] = useState("");
+  const [articleImage, setArticleImage] = useState("/images/news_hero.png");
+  const [editingArticleId, setEditingArticleId] = useState<number | null>(null);
+
+  const [selectedRequest, setSelectedRequest] = useState<InscriptionRequest | null>(null);
+  const [selectedMessage, setSelectedMessage] = useState<ContactMessage | null>(null);
+
+  // === INITIALIZATION & LOAD ===
+  useEffect(() => {
+    // Initialize DB with defaults
+    db.init();
+    
+    // Load from DB
+    setFormations(db.getFormations());
+    setArticles(db.getArticles());
+    setInscriptions(db.getInscriptions());
+    setMessages(db.getMessages());
+    setTestimonials(db.getTestimonials());
+
+    // Check if session token exists
+    const sessionToken = sessionStorage.getItem("cfig_admin_token");
+    if (sessionToken === "logged_in_token") {
+      setIsLoggedIn(true);
+    }
+  }, []);
+
+  const handleLogin = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (username.toLowerCase() === "admin" && password === "admin") {
+      sessionStorage.setItem("cfig_admin_token", "logged_in_token");
+      setIsLoggedIn(true);
+      setAuthError("");
+    } else {
+      setAuthError("Identifiants incorrects. Indice : utilisez 'admin' / 'admin'.");
+    }
+  };
+
+  const handleLogout = () => {
+    sessionStorage.removeItem("cfig_admin_token");
+    setIsLoggedIn(false);
+  };
+
+  // === DB MUTATION WRAPPERS ===
+  const refreshAllData = () => {
+    setFormations(db.getFormations());
+    setArticles(db.getArticles());
+    setInscriptions(db.getInscriptions());
+    setMessages(db.getMessages());
+    setTestimonials(db.getTestimonials());
+  };
+
+  // 1. Formations CRUD
+  const handleAddOrEditModule = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newModuleTitle || !newModuleCategory) return;
+
+    const currentFormations = [...formations];
+    const outilsArray = newModuleOutils.split(",").map(o => o.trim()).filter(Boolean);
+
+    if (editingModule !== null) {
+      // Edit
+      const { catIndex, modIndex } = editingModule;
+      currentFormations[catIndex].modules[modIndex] = {
+        titre: newModuleTitle,
+        outils: outilsArray
+      };
+      setEditingModule(null);
+    } else {
+      // Add
+      let cat = currentFormations.find(c => c.categorie.toLowerCase() === newModuleCategory.trim().toLowerCase());
+      if (!cat) {
+        cat = { categorie: newModuleCategory.trim(), modules: [] };
+        currentFormations.push(cat);
+      }
+      cat.modules.push({ titre: newModuleTitle, outils: outilsArray });
+    }
+
+    db.saveFormations(currentFormations);
+    refreshAllData();
+    
+    // Clear forms
+    setNewModuleTitle("");
+    setNewModuleCategory("");
+    setNewModuleOutils("");
+    setShowAddModuleModal(false);
+  };
+
+  const handleDeleteModule = (catIndex: number, modIndex: number) => {
+    if (!confirm("Voulez-vous vraiment supprimer ce module de formation ?")) return;
+    const currentFormations = [...formations];
+    currentFormations[catIndex].modules.splice(modIndex, 1);
+    
+    // Remove category if empty
+    if (currentFormations[catIndex].modules.length === 0) {
+      currentFormations.splice(catIndex, 1);
+    }
+
+    db.saveFormations(currentFormations);
+    refreshAllData();
+  };
+
+  const startEditModule = (catIndex: number, modIndex: number) => {
+    const mod = formations[catIndex].modules[modIndex];
+    setNewModuleTitle(mod.titre);
+    setNewModuleCategory(formations[catIndex].categorie);
+    setNewModuleOutils(mod.outils.join(", "));
+    setEditingModule({ catIndex, modIndex, oldTitle: mod.titre });
+    setShowAddModuleModal(true);
+  };
+
+  // 2. Inscriptions Actions
+  const handleUpdateInscriptionStatus = (id: string, status: "En attente" | "Validé" | "Annulé") => {
+    const list = [...inscriptions];
+    const item = list.find(x => x.id === id);
+    if (item) {
+      item.status = status;
+      db.saveInscriptions(list);
+      refreshAllData();
+    }
+  };
+
+  // 3. Articles (Blog) CRUD
+  const handleAddOrEditArticle = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!articleTitle || !articleExcerpt) return;
+
+    let currentArticles = [...articles];
+
+    if (editingArticleId !== null) {
+      // Edit
+      currentArticles = currentArticles.map(a => 
+        a.id === editingArticleId
+          ? { ...a, title: articleTitle, excerpt: articleExcerpt, category: articleCategory, author: articleAuthor, image: articleImage }
+          : a
+      );
+      setEditingArticleId(null);
+    } else {
+      // Add
+      const newArticle: Article = {
+        id: currentArticles.length > 0 ? Math.max(...currentArticles.map(a => a.id)) + 1 : 1,
+        title: articleTitle,
+        excerpt: articleExcerpt,
+        date: new Date().toISOString().split("T")[0],
+        author: articleAuthor || "Direction",
+        category: articleCategory || "Actualités",
+        image: articleImage
+      };
+      currentArticles.unshift(newArticle);
+    }
+
+    db.saveArticles(currentArticles);
+    refreshAllData();
+
+    // Clear forms
+    setArticleTitle("");
+    setArticleExcerpt("");
+    setArticleCategory("");
+    setArticleAuthor("");
+    setArticleImage("/images/news_hero.png");
+    setShowAddArticleModal(false);
+  };
+
+  const startEditArticle = (article: Article) => {
+    setArticleTitle(article.title);
+    setArticleExcerpt(article.excerpt);
+    setArticleCategory(article.category);
+    setArticleAuthor(article.author);
+    setArticleImage(article.image);
+    setEditingArticleId(article.id);
+    setShowAddArticleModal(true);
+  };
+
+  const handleDeleteArticle = (id: number) => {
+    if (!confirm("Voulez-vous vraiment supprimer cet article de blog ?")) return;
+    const currentArticles = articles.filter(a => a.id !== id);
+    db.saveArticles(currentArticles);
+    refreshAllData();
+  };
+
+  // 4. Testimonials toggle active
+  const handleToggleTestimonial = (index: number) => {
+    const list = [...testimonials];
+    list[index].active = !list[index].active;
+    db.saveTestimonials(list);
+    refreshAllData();
+  };
+
+  // 5. Contact Messages mark as read
+  const handleMarkMessageRead = (id: string) => {
+    const list = [...messages];
+    const msg = list.find(m => m.id === id);
+    if (msg) {
+      msg.status = "Lu";
+      db.saveMessages(list);
+      refreshAllData();
+    }
+  };
+
+  const handleDeleteMessage = (id: string) => {
+    if (!confirm("Voulez-vous vraiment supprimer ce message ?")) return;
+    const list = messages.filter(m => m.id !== id);
+    db.saveMessages(list);
+    refreshAllData();
+  };
+
+  // === RENDERING UTILITIES ===
+
+  // 1. Overview aggregates
+  const pendingInscriptionsCount = inscriptions.filter(x => x.status === "En attente").length;
+  const unreadMessagesCount = messages.filter(x => x.status === "Non lu").length;
+  const modulesCount = formations.reduce((acc, cat) => acc + cat.modules.length, 0);
+
+  // Filter registrations
+  const filteredInscriptions = inscriptions.filter(item => {
+    const matchesSearch = item.fullName.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                          item.domain.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                          item.id.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesStatus = statusFilter === "Tous" || item.status === statusFilter;
+    return matchesSearch && matchesStatus;
+  });
+
+  // Filter messages
+  const filteredMessages = messages.filter(item => 
+    item.fullName.toLowerCase().includes(searchQuery.toLowerCase()) || 
+    item.message.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  if (!isLoggedIn) {
+    return (
+      <div className="min-h-screen bg-[var(--color-primary)] flex items-center justify-center p-4 font-sans relative overflow-hidden">
+        {/* Background Decorative patterns */}
+        <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10" />
+        <div className="absolute w-96 h-96 bg-[var(--color-accent)] opacity-10 rounded-full blur-3xl -top-20 -left-20"></div>
+        <div className="absolute w-96 h-96 bg-[var(--color-light)] opacity-5 rounded-full blur-3xl -bottom-20 -right-20"></div>
+        
+        <motion.div 
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-white/10 backdrop-blur-md border border-white/20 p-8 w-full max-w-md shadow-2xl relative z-10 text-white rounded-none"
+        >
+          <div className="text-center mb-8">
+            <div className="w-16 h-16 bg-[var(--color-accent)] mx-auto flex items-center justify-center font-heading font-black text-2xl tracking-wider text-white shadow-lg mb-4">
+              CF
+            </div>
+            <h1 className="text-2xl md:text-3xl font-heading font-bold">CFIG Guinée</h1>
+            <p className="text-xs text-gray-300 mt-1 uppercase tracking-widest">Espace d'Administration</p>
+          </div>
+
+          <form onSubmit={handleLogin} className="space-y-5">
+            <div>
+              <label className="block text-xs font-bold uppercase tracking-wider text-gray-200 mb-1.5">Identifiant *</label>
+              <input
+                type="text"
+                required
+                className="w-full bg-white/5 border border-white/20 px-4 py-3 text-sm text-white focus:outline-none focus:border-[var(--color-accent)] focus:ring-1 focus:ring-[var(--color-accent)] transition-all rounded-none"
+                placeholder="Entrez votre identifiant"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold uppercase tracking-wider text-gray-200 mb-1.5">Mot de passe *</label>
+              <input
+                type="password"
+                required
+                className="w-full bg-white/5 border border-white/20 px-4 py-3 text-sm text-white focus:outline-none focus:border-[var(--color-accent)] focus:ring-1 focus:ring-[var(--color-accent)] transition-all rounded-none"
+                placeholder="••••••••"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+              />
+            </div>
+
+            {authError && (
+              <p className="text-red-300 text-xs font-semibold bg-red-900/30 p-3 border border-red-500/20">{authError}</p>
+            )}
+
+            <button
+              type="submit"
+              className="w-full py-3 bg-[var(--color-accent)] hover:bg-[var(--color-light)] text-white text-xs font-bold uppercase tracking-wider transition-all duration-300 shadow-md flex items-center justify-center gap-2 rounded-none"
+            >
+              <Lock className="w-4 h-4" /> Se connecter
+            </button>
+          </form>
+
+          <div className="mt-8 text-center pt-6 border-t border-white/10">
+            <p className="text-xs text-gray-400">
+              💡 Preview active : utilisez <code className="text-white bg-white/10 px-1 py-0.5 rounded font-bold">admin</code> / <code className="text-white bg-white/10 px-1 py-0.5 rounded font-bold">admin</code>
+            </p>
+          </div>
+        </motion.div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-[var(--color-gray)] flex font-sans text-gray-800">
+      
+      {/* ================================================
+          1. SIDEBAR NAVIGATION
+      ================================================ */}
+      <aside className="w-64 bg-[var(--color-primary)] text-white flex flex-col flex-shrink-0 z-20">
+        {/* Brand header */}
+        <div className="p-6 border-b border-white/10 flex items-center gap-3">
+          <div className="w-10 h-10 bg-[var(--color-accent)] flex items-center justify-center font-heading font-black text-lg tracking-wider text-white shadow">
+            CF
+          </div>
+          <div>
+            <h1 className="font-heading font-bold text-sm tracking-wide leading-none">CFIG Guinée</h1>
+            <span className="text-[10px] text-gray-400 uppercase tracking-widest font-bold">Dashboard</span>
+          </div>
+        </div>
+
+        {/* Navigation list */}
+        <nav className="flex-grow p-4 space-y-1.5">
+          {[
+            { id: "overview", label: "Vue d'ensemble", icon: <LayoutDashboard className="w-4 h-4" /> },
+            { id: "inscriptions", label: "Inscriptions & Devis", icon: <GraduationCap className="w-4 h-4" />, badge: pendingInscriptionsCount },
+            { id: "formations", label: "Formations & Modules", icon: <BookOpen className="w-4 h-4" /> },
+            { id: "actualites", label: "Blog & Actualités", icon: <FileText className="w-4 h-4" /> },
+            { id: "testimonials", label: "Témoignages Alumni", icon: <MessageSquare className="w-4 h-4" /> },
+            { id: "messages", label: "Messages de Contact", icon: <Mail className="w-4 h-4" />, badge: unreadMessagesCount }
+          ].map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => {
+                setActiveTab(tab.id as any);
+                setSearchQuery("");
+                setStatusFilter("Tous");
+              }}
+              className={`w-full flex items-center justify-between px-4 py-3 text-xs font-bold uppercase tracking-wider transition-colors ${
+                activeTab === tab.id
+                  ? "bg-[var(--color-accent)] text-white"
+                  : "text-gray-300 hover:bg-white/5 hover:text-white"
+              }`}
+            >
+              <div className="flex items-center gap-3">
+                {tab.icon}
+                {tab.label}
+              </div>
+              {tab.badge !== undefined && tab.badge > 0 && (
+                <span className="bg-red-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full">
+                  {tab.badge}
+                </span>
+              )}
+            </button>
+          ))}
+        </nav>
+
+        {/* Footer logout */}
+        <div className="p-4 border-t border-white/10">
+          <button
+            onClick={handleLogout}
+            className="w-full flex items-center gap-3 px-4 py-3 text-xs font-bold uppercase tracking-wider text-red-300 hover:bg-red-950/20 hover:text-red-200 transition-colors"
+          >
+            <LogOut className="w-4 h-4" /> Se déconnecter
+          </button>
+        </div>
+      </aside>
+
+      {/* ================================================
+          2. MAIN CONTENT AREA
+      ================================================ */}
+      <main className="flex-grow flex flex-col min-h-screen overflow-y-auto">
+        {/* Header */}
+        <header className="bg-white border-b border-gray-200 px-8 py-5 flex items-center justify-between sticky top-0 z-10 shadow-sm">
+          <div>
+            <h2 className="text-xl font-heading font-bold text-[var(--color-primary)] capitalize">
+              {activeTab === "overview" && "Vue d'ensemble"}
+              {activeTab === "inscriptions" && "Suivi des Inscriptions & Devis"}
+              {activeTab === "formations" && "Gestion des Formations"}
+              {activeTab === "actualites" && "Éditeur du Blog & Actualités"}
+              {activeTab === "testimonials" && "Gestion des Témoignages"}
+              {activeTab === "messages" && "Messages clients"}
+            </h2>
+            <p className="text-xs text-gray-500 mt-0.5">Bienvenue dans l'interface de contrôle du cabinet CFIG Guinée.</p>
+          </div>
+          <Link
+            href="/"
+            className="px-4 py-2 border-2 border-[var(--color-primary)] text-[var(--color-primary)] text-xs font-bold uppercase tracking-wider hover:bg-[var(--color-primary)] hover:text-white transition-colors"
+          >
+            Voir le site public
+          </Link>
+        </header>
+
+        {/* Body content */}
+        <div className="p-8 flex-grow">
+          <AnimatePresence mode="wait">
+            
+            {/* ====================================
+                TAB: OVERVIEW
+            ==================================== */}
+            {activeTab === "overview" && (
+              <motion.div
+                key="overview"
+                initial={{ opacity: 0, y: 15 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0 }}
+                className="space-y-8"
+              >
+                {/* Stats Grid */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                  {[
+                    { title: "Apprenants Formés", val: "542", desc: "Total cumulé", icon: <Users className="w-5 h-5 text-[var(--color-accent)]" /> },
+                    { title: "Modules Actifs", val: modulesCount.toString(), desc: "Répartis sur 8 catégories", icon: <BookOpen className="w-5 h-5 text-[var(--color-accent)]" /> },
+                    { title: "Demandes en Attente", val: pendingInscriptionsCount.toString(), desc: "Besoin de validation", icon: <GraduationCap className="w-5 h-5 text-amber-500" />, warning: pendingInscriptionsCount > 0 },
+                    { title: "Nouveaux Messages", val: unreadMessagesCount.toString(), desc: "Formulaires de contact", icon: <Mail className="w-5 h-5 text-red-500" />, alert: unreadMessagesCount > 0 }
+                  ].map((card, i) => (
+                    <div 
+                      key={i} 
+                      className={`bg-white border p-6 flex items-start justify-between shadow-sm hover:shadow-md transition-shadow ${
+                        card.warning ? "border-l-4 border-l-amber-500 border-gray-200" : 
+                        card.alert ? "border-l-4 border-l-red-500 border-gray-200" : "border-gray-200"
+                      }`}
+                    >
+                      <div>
+                        <span className="text-[10px] uppercase tracking-wider font-bold text-gray-400 block mb-1">{card.title}</span>
+                        <span className="text-3xl font-heading font-black text-[var(--color-primary)] block mb-1">{card.val}</span>
+                        <span className="text-[10px] text-gray-500 font-medium">{card.desc}</span>
+                      </div>
+                      <div className="p-3 bg-gray-50 border border-gray-100">
+                        {card.icon}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Charts & Analytics */}
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                  {/* Monthly Trend Card */}
+                  <div className="bg-white border border-gray-200 p-6 lg:col-span-2 shadow-sm">
+                    <h3 className="text-sm font-bold uppercase tracking-wider text-[var(--color-primary)] mb-5">Tendances des Inscriptions (2026)</h3>
+                    
+                    {/* SVG Chart mockup - super clean and highly professional */}
+                    <div className="h-64 w-full relative pt-4 flex items-end justify-between border-b border-l border-gray-200">
+                      {/* Grid Lines */}
+                      <div className="absolute inset-0 flex flex-col justify-between pointer-events-none opacity-20 pr-4">
+                        {[100, 75, 50, 25, 0].map((line, li) => (
+                          <div key={li} className="w-full border-t border-dashed border-gray-400 text-[8px] font-bold text-gray-400 text-right -mt-2.5">
+                            {line}%
+                          </div>
+                        ))}
+                      </div>
+
+                      {/* Bars */}
+                      {[
+                        { month: "Jan", val: 35 },
+                        { month: "Fév", val: 42 },
+                        { month: "Mar", val: 58 },
+                        { month: "Avr", val: 74 },
+                        { month: "Mai", val: 92 }
+                      ].map((item, index) => (
+                        <div key={index} className="flex-1 flex flex-col items-center group relative z-10 px-2 sm:px-4">
+                          <div className="text-[10px] font-bold text-[var(--color-accent)] mb-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                            {item.val}
+                          </div>
+                          <div 
+                            style={{ height: `${item.val * 2}px` }} 
+                            className="w-full bg-[var(--color-primary)] group-hover:bg-[var(--color-accent)] transition-all cursor-pointer shadow-sm"
+                          />
+                          <span className="text-[10px] font-bold text-gray-500 mt-2">{item.month}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Popular domains card */}
+                  <div className="bg-white border border-gray-200 p-6 shadow-sm">
+                    <h3 className="text-sm font-bold uppercase tracking-wider text-[var(--color-primary)] mb-5">Répartition par Catégorie</h3>
+                    <div className="space-y-4">
+                      {[
+                        { name: "Analyse des Données", percent: 38, count: 18, color: "bg-[var(--color-primary)]" },
+                        { name: "Gestion & Comptabilité", percent: 28, count: 13, color: "bg-[var(--color-accent)]" },
+                        { name: "Logistique et Transport", percent: 18, count: 9, color: "bg-[var(--color-light)]" },
+                        { name: "Autres Domaines", percent: 16, count: 8, color: "bg-gray-300" }
+                      ].map((domain, index) => (
+                        <div key={index} className="space-y-1">
+                          <div className="flex justify-between items-center text-xs font-bold">
+                            <span className="text-gray-700 truncate max-w-[170px]">{domain.name}</span>
+                            <span className="text-[var(--color-primary)]">{domain.percent}% ({domain.count})</span>
+                          </div>
+                          <div className="h-2 w-full bg-gray-100 overflow-hidden">
+                            <div style={{ width: `${domain.percent}%` }} className={`h-full ${domain.color}`} />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Recents Feed Grid */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {/* Recents Inscriptions */}
+                  <div className="bg-white border border-gray-200 p-6 shadow-sm flex flex-col">
+                    <h3 className="text-sm font-bold uppercase tracking-wider text-[var(--color-primary)] mb-4 border-b border-gray-100 pb-3">Dernières Inscriptions</h3>
+                    <div className="flex-grow divide-y divide-gray-100">
+                      {inscriptions.slice(0, 4).map((ins, index) => (
+                        <div key={index} className="py-3.5 flex items-center justify-between gap-4">
+                          <div>
+                            <h4 className="font-bold text-sm text-[var(--color-primary)]">{ins.fullName}</h4>
+                            <p className="text-xs text-gray-500">{ins.domain} — <span className="italic">{ins.requestType}</span></p>
+                          </div>
+                          <span className={`text-[9px] font-bold px-2 py-0.5 uppercase tracking-wider ${
+                            ins.status === "Validé" ? "bg-green-100 text-green-700" :
+                            ins.status === "Annulé" ? "bg-red-100 text-red-700" : "bg-amber-100 text-amber-700"
+                          }`}>
+                            {ins.status}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Recents Messages */}
+                  <div className="bg-white border border-gray-200 p-6 shadow-sm flex flex-col">
+                    <h3 className="text-sm font-bold uppercase tracking-wider text-[var(--color-primary)] mb-4 border-b border-gray-100 pb-3">Messages récents</h3>
+                    <div className="flex-grow divide-y divide-gray-100">
+                      {messages.slice(0, 4).map((msg, index) => (
+                        <div key={index} className="py-3.5 flex items-center justify-between gap-4">
+                          <div className="truncate max-w-[280px]">
+                            <h4 className="font-bold text-sm text-[var(--color-primary)]">{msg.fullName}</h4>
+                            <p className="text-xs text-gray-500 truncate italic">"{msg.message}"</p>
+                          </div>
+                          <span className={`text-[9px] font-bold px-2 py-0.5 uppercase tracking-wider ${
+                            msg.status === "Lu" ? "bg-gray-100 text-gray-500" : "bg-red-100 text-red-700"
+                          }`}>
+                            {msg.status}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+
+            {/* ====================================
+                TAB: INSCRIPTIONS & DEVIS
+            ==================================== */}
+            {activeTab === "inscriptions" && (
+              <motion.div
+                key="inscriptions"
+                initial={{ opacity: 0, y: 15 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0 }}
+                className="space-y-6"
+              >
+                {/* Search & filters bar */}
+                <div className="bg-white border border-gray-200 p-4 shadow-sm flex flex-col sm:flex-row gap-4 justify-between items-center">
+                  <div className="relative w-full sm:max-w-xs">
+                    <input
+                      type="text"
+                      className="w-full pl-9 pr-4 py-2 border border-gray-300 text-xs font-medium focus:outline-none focus:ring-1 focus:ring-[var(--color-primary)] bg-gray-50"
+                      placeholder="Rechercher un candidat, un ID..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                    />
+                    <Search className="w-4 h-4 text-gray-400 absolute left-3 top-2.5" />
+                  </div>
+
+                  <div className="flex gap-2">
+                    {["Tous", "En attente", "Validé", "Annulé"].map((st) => (
+                      <button
+                        key={st}
+                        onClick={() => setStatusFilter(st)}
+                        className={`px-3 py-1.5 border text-[10px] font-bold uppercase tracking-wider transition-colors ${
+                          statusFilter === st
+                            ? "bg-[var(--color-accent)] text-white border-[var(--color-accent)]"
+                            : "bg-white text-gray-600 border-gray-300 hover:bg-gray-50"
+                        }`}
+                      >
+                        {st}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Table */}
+                <div className="bg-white border border-gray-200 shadow-sm overflow-x-auto">
+                  <table className="w-full text-left border-collapse">
+                    <thead>
+                      <tr className="bg-gray-50 border-b border-gray-200 text-[10px] font-bold uppercase tracking-wider text-gray-400">
+                        <th className="py-4 px-6">Identifiant</th>
+                        <th className="py-4 px-6">Candidat</th>
+                        <th className="py-4 px-6">Type</th>
+                        <th className="py-4 px-6">Domaine</th>
+                        <th className="py-4 px-6">Date</th>
+                        <th className="py-4 px-6 text-center">Statut</th>
+                        <th className="py-4 px-6 text-right">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100 text-xs font-medium">
+                      {filteredInscriptions.map((ins) => (
+                        <tr key={ins.id} className="hover:bg-gray-50 transition-colors">
+                          <td className="py-4 px-6 font-bold text-gray-400">{ins.id}</td>
+                          <td className="py-4 px-6">
+                            <div className="font-bold text-[var(--color-primary)]">{ins.fullName}</div>
+                            <div className="text-[10px] text-gray-500 mt-0.5">{ins.email} | {ins.phone}</div>
+                            {ins.company && <div className="text-[9px] text-[var(--color-accent)] mt-0.5 uppercase tracking-wider font-bold">Entreprise : {ins.company}</div>}
+                          </td>
+                          <td className="py-4 px-6 italic text-gray-600">{ins.requestType}</td>
+                          <td className="py-4 px-6 font-semibold">{ins.domain}</td>
+                          <td className="py-4 px-6 text-gray-500">
+                            {new Date(ins.date).toLocaleDateString("fr-FR", { day: "numeric", month: "short", year: "numeric" })}
+                          </td>
+                          <td className="py-4 px-6 text-center">
+                            <span className={`text-[9px] font-bold px-2.5 py-1 uppercase tracking-wider ${
+                              ins.status === "Validé" ? "bg-green-100 text-green-700" :
+                              ins.status === "Annulé" ? "bg-red-100 text-red-700" : "bg-amber-100 text-amber-700"
+                            }`}>
+                              {ins.status}
+                            </span>
+                          </td>
+                          <td className="py-4 px-6 text-right flex items-center justify-end gap-1.5">
+                            <button
+                              onClick={() => setSelectedRequest(ins)}
+                              className="p-1.5 bg-blue-50 border border-blue-200 text-blue-700 hover:bg-blue-100"
+                              title="Voir les détails"
+                            >
+                              <Eye className="w-3.5 h-3.5" />
+                            </button>
+                            {ins.status === "En attente" && (
+                              <>
+                                <button
+                                  onClick={() => handleUpdateInscriptionStatus(ins.id, "Validé")}
+                                  className="p-1.5 bg-green-50 border border-green-200 text-green-700 hover:bg-green-100"
+                                  title="Valider"
+                                >
+                                  <Check className="w-3.5 h-3.5" />
+                                </button>
+                                <button
+                                  onClick={() => handleUpdateInscriptionStatus(ins.id, "Annulé")}
+                                  className="p-1.5 bg-red-50 border border-red-200 text-red-700 hover:bg-red-100"
+                                  title="Annuler"
+                                >
+                                  <X className="w-3.5 h-3.5" />
+                                </button>
+                              </>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                      {filteredInscriptions.length === 0 && (
+                        <tr>
+                          <td colSpan={7} className="py-12 text-center text-gray-500 italic">
+                            Aucune inscription ne correspond à ces critères.
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </motion.div>
+            )}
+
+            {/* ====================================
+                TAB: FORMATIONS & MODULES
+            ==================================== */}
+            {activeTab === "formations" && (
+              <motion.div
+                key="formations"
+                initial={{ opacity: 0, y: 15 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0 }}
+                className="space-y-6"
+              >
+                {/* Actions header bar */}
+                <div className="bg-white border border-gray-200 p-4 shadow-sm flex justify-between items-center">
+                  <span className="text-xs font-bold text-gray-500 uppercase tracking-widest">{modulesCount} Modules enregistrés</span>
+                  <button
+                    onClick={() => {
+                      setEditingModule(null);
+                      setNewModuleTitle("");
+                      setNewModuleCategory("");
+                      setNewModuleOutils("");
+                      setShowAddModuleModal(true);
+                    }}
+                    className="flex items-center gap-2 px-4 py-2 bg-[var(--color-primary)] hover:bg-[var(--color-accent)] text-white text-xs font-bold uppercase tracking-wider transition-colors"
+                  >
+                    <Plus className="w-4 h-4" /> Ajouter un module
+                  </button>
+                </div>
+
+                {/* Categories and modules view */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {formations.map((cat, catIdx) => (
+                    <div key={catIdx} className="bg-white border border-gray-200 shadow-sm flex flex-col">
+                      <div className="bg-gray-50 border-b border-gray-200 p-4 flex items-center justify-between">
+                        <h3 className="font-heading font-bold text-sm text-[var(--color-primary)] flex items-center gap-2">
+                          <Layers className="w-4 h-4 text-[var(--color-accent)]" />
+                          {cat.categorie}
+                        </h3>
+                        <span className="bg-[var(--color-accent)] text-white text-[9px] font-bold px-2 py-0.5">
+                          {cat.modules.length} modules
+                        </span>
+                      </div>
+
+                      <div className="p-4 flex-grow divide-y divide-gray-100">
+                        {cat.modules.map((mod, modIdx) => (
+                          <div key={modIdx} className="py-3 flex items-start justify-between gap-4 group">
+                            <div className="max-w-[280px]">
+                              <h4 className="font-bold text-xs text-gray-800">{mod.titre}</h4>
+                              <div className="flex flex-wrap gap-1 mt-1.5">
+                                {mod.outils && mod.outils.length > 0 ? (
+                                  mod.outils.map((o, oi) => (
+                                    <span key={oi} className="px-1.5 py-0.5 bg-gray-100 text-gray-600 text-[8px] font-semibold border border-gray-200">
+                                      {o}
+                                    </span>
+                                  ))
+                                ) : (
+                                  <span className="text-[9px] text-gray-400 italic">Concepts métiers</span>
+                                )}
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-1 opacity-60 group-hover:opacity-100 transition-opacity">
+                              <button
+                                onClick={() => startEditModule(catIdx, modIdx)}
+                                className="p-1 text-gray-500 hover:text-[var(--color-accent)]"
+                                title="Modifier"
+                              >
+                                <Edit3 className="w-3.5 h-3.5" />
+                              </button>
+                              <button
+                                onClick={() => handleDeleteModule(catIdx, modIdx)}
+                                className="p-1 text-gray-500 hover:text-red-500"
+                                title="Supprimer"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </motion.div>
+            )}
+
+            {/* ====================================
+                TAB: ACTUALITES (BLOG)
+            ==================================== */}
+            {activeTab === "actualites" && (
+              <motion.div
+                key="actualites"
+                initial={{ opacity: 0, y: 15 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0 }}
+                className="space-y-6"
+              >
+                {/* Actions bar */}
+                <div className="bg-white border border-gray-200 p-4 shadow-sm flex justify-between items-center">
+                  <span className="text-xs font-bold text-gray-500 uppercase tracking-widest">{articles.length} Articles en ligne</span>
+                  <button
+                    onClick={() => {
+                      setEditingArticleId(null);
+                      setArticleTitle("");
+                      setArticleExcerpt("");
+                      setArticleCategory("");
+                      setArticleAuthor("");
+                      setArticleImage("/images/news_hero.png");
+                      setShowAddArticleModal(true);
+                    }}
+                    className="flex items-center gap-2 px-4 py-2 bg-[var(--color-primary)] hover:bg-[var(--color-accent)] text-white text-xs font-bold uppercase tracking-wider transition-colors"
+                  >
+                    <Plus className="w-4 h-4" /> Créer un article
+                  </button>
+                </div>
+
+                {/* Table grid */}
+                <div className="bg-white border border-gray-200 shadow-sm overflow-x-auto">
+                  <table className="w-full text-left border-collapse">
+                    <thead>
+                      <tr className="bg-gray-50 border-b border-gray-200 text-[10px] font-bold uppercase tracking-wider text-gray-400">
+                        <th className="py-4 px-6">Titre</th>
+                        <th className="py-4 px-6">Auteur</th>
+                        <th className="py-4 px-6">Catégorie</th>
+                        <th className="py-4 px-6">Date</th>
+                        <th className="py-4 px-6 text-right">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100 text-xs font-medium">
+                      {articles.map((art) => (
+                        <tr key={art.id} className="hover:bg-gray-50 transition-colors">
+                          <td className="py-4 px-6 max-w-sm">
+                            <div className="font-bold text-[var(--color-primary)] truncate">{art.title}</div>
+                            <div className="text-[10px] text-gray-500 truncate mt-0.5">{art.excerpt}</div>
+                          </td>
+                          <td className="py-4 px-6 text-gray-600">{art.author}</td>
+                          <td className="py-4 px-6">
+                            <span className="bg-blue-50 text-[var(--color-accent)] border border-blue-100 px-2 py-0.5 font-bold text-[9px] uppercase tracking-wider">
+                              {art.category}
+                            </span>
+                          </td>
+                          <td className="py-4 px-6 text-gray-500">
+                            {new Date(art.date).toLocaleDateString("fr-FR", { day: "numeric", month: "short", year: "numeric" })}
+                          </td>
+                          <td className="py-4 px-6 text-right flex items-center justify-end gap-1.5 mt-2.5">
+                            <button
+                              onClick={() => startEditArticle(art)}
+                              className="p-1.5 bg-gray-50 border border-gray-300 text-gray-600 hover:bg-gray-100"
+                              title="Modifier"
+                            >
+                              <Edit3 className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              onClick={() => handleDeleteArticle(art.id)}
+                              className="p-1.5 bg-red-50 border border-red-200 text-red-700 hover:bg-red-100"
+                              title="Supprimer"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </motion.div>
+            )}
+
+            {/* ====================================
+                TAB: TESTIMONIALS
+            ==================================== */}
+            {activeTab === "testimonials" && (
+              <motion.div
+                key="testimonials"
+                initial={{ opacity: 0, y: 15 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0 }}
+                className="space-y-6"
+              >
+                <div className="bg-white border border-gray-200 p-6 shadow-sm">
+                  <h3 className="text-sm font-bold uppercase tracking-wider text-[var(--color-primary)] mb-5 border-b border-gray-100 pb-3">Témoignages Alumni actifs</h3>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {testimonials.map((test, index) => (
+                      <div 
+                        key={index} 
+                        className={`bg-white border p-6 shadow-sm flex flex-col relative ${
+                          test.active ? "border-gray-200" : "border-gray-300 opacity-60 bg-gray-50"
+                        }`}
+                      >
+                        <div className="flex items-center gap-3 pt-2 pb-4 border-b border-gray-100">
+                          <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm ${test.color}`}>
+                            {test.initials}
+                          </div>
+                          <div>
+                            <h4 className="font-bold text-xs text-[var(--color-primary)]">{test.name}</h4>
+                            <p className="text-[10px] text-gray-500">{test.role}</p>
+                          </div>
+                        </div>
+
+                        <p className="text-xs text-gray-600 italic leading-relaxed py-4 flex-grow">
+                          "{test.text}"
+                        </p>
+
+                        <div className="flex justify-between items-center pt-2">
+                          <span className="text-[10px] text-amber-500 font-bold">★ {test.rating}/5</span>
+                          <button
+                            onClick={() => handleToggleTestimonial(index)}
+                            className={`px-3 py-1.5 text-[9px] font-bold uppercase tracking-wider border ${
+                              test.active 
+                                ? "bg-red-50 text-red-700 border-red-200 hover:bg-red-100" 
+                                : "bg-green-50 text-green-700 border-green-200 hover:bg-green-100"
+                            }`}
+                          >
+                            {test.active ? "Désactiver" : "Activer"}
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </motion.div>
+            )}
+
+            {/* ====================================
+                TAB: CONTACT MESSAGES
+            ==================================== */}
+            {activeTab === "messages" && (
+              <motion.div
+                key="messages"
+                initial={{ opacity: 0, y: 15 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0 }}
+                className="space-y-6"
+              >
+                <div className="bg-white border border-gray-200 shadow-sm overflow-x-auto">
+                  <table className="w-full text-left border-collapse">
+                    <thead>
+                      <tr className="bg-gray-50 border-b border-gray-200 text-[10px] font-bold uppercase tracking-wider text-gray-400">
+                        <th className="py-4 px-6">Expéditeur</th>
+                        <th className="py-4 px-6">Objet</th>
+                        <th className="py-4 px-6">Date</th>
+                        <th className="py-4 px-6 text-center">Statut</th>
+                        <th className="py-4 px-6 text-right">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100 text-xs font-medium">
+                      {filteredMessages.map((msg) => (
+                        <tr key={msg.id} className={`hover:bg-gray-50 transition-colors ${msg.status === "Non lu" ? "bg-red-50/10 font-bold" : ""}`}>
+                          <td className="py-4 px-6">
+                            <div className="text-[var(--color-primary)]">{msg.fullName}</div>
+                            <div className="text-[10px] text-gray-500 font-medium">{msg.email}</div>
+                          </td>
+                          <td className="py-4 px-6 italic text-gray-600 truncate max-w-xs">{msg.subject}</td>
+                          <td className="py-4 px-6 text-gray-500">
+                            {new Date(msg.date).toLocaleDateString("fr-FR", { day: "numeric", month: "short", year: "numeric" })}
+                          </td>
+                          <td className="py-4 px-6 text-center">
+                            <span className={`text-[9px] font-bold px-2 py-0.5 uppercase tracking-wider ${
+                              msg.status === "Lu" ? "bg-gray-100 text-gray-500" : "bg-red-100 text-red-700"
+                            }`}>
+                              {msg.status}
+                            </span>
+                          </td>
+                          <td className="py-4 px-6 text-right flex items-center justify-end gap-1.5">
+                            <button
+                              onClick={() => {
+                                handleMarkMessageRead(msg.id);
+                                setSelectedMessage(msg);
+                              }}
+                              className="p-1.5 bg-blue-50 border border-blue-200 text-blue-700 hover:bg-blue-100"
+                              title="Lire le message"
+                            >
+                              <Eye className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              onClick={() => handleDeleteMessage(msg.id)}
+                              className="p-1.5 bg-red-50 border border-red-200 text-red-700 hover:bg-red-100"
+                              title="Supprimer"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                      {filteredMessages.length === 0 && (
+                        <tr>
+                          <td colSpan={5} className="py-12 text-center text-gray-500 italic">
+                            Aucun message de contact reçu.
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </motion.div>
+            )}
+
+          </AnimatePresence>
+        </div>
+      </main>
+
+      {/* ================================================
+          3. FULL MODALS (CRUD / VIEW DETAILS)
+      ================================================ */}
+      
+      {/* Modal: Add/Edit Module */}
+      {showAddModuleModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="bg-white p-8 w-full max-w-md border border-gray-200 shadow-2xl text-gray-800 rounded-none"
+          >
+            <div className="flex justify-between items-center mb-6 border-b border-gray-100 pb-3">
+              <h3 className="text-lg font-heading font-bold text-[var(--color-primary)]">
+                {editingModule !== null ? "Modifier le module" : "Ajouter un module"}
+              </h3>
+              <button onClick={() => {
+                setShowAddModuleModal(false);
+                setEditingModule(null);
+              }} className="text-gray-400 hover:text-gray-600">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleAddOrEditModule} className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-1.5">Catégorie *</label>
+                <input
+                  type="text"
+                  required
+                  className="w-full bg-gray-50 border border-gray-300 px-4 py-2 text-xs focus:outline-none focus:border-[var(--color-primary)] rounded-none"
+                  placeholder="Ex: Analyse des Données, Gestion, etc."
+                  value={newModuleCategory}
+                  onChange={(e) => setNewModuleCategory(e.target.value)}
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-1.5">Intitulé du module *</label>
+                <input
+                  type="text"
+                  required
+                  className="w-full bg-gray-50 border border-gray-300 px-4 py-2 text-xs focus:outline-none focus:border-[var(--color-primary)] rounded-none"
+                  placeholder="Ex: Initiation à Excel"
+                  value={newModuleTitle}
+                  onChange={(e) => setNewModuleTitle(e.target.value)}
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-1.5">Outils (séparés par virgules)</label>
+                <input
+                  type="text"
+                  className="w-full bg-gray-50 border border-gray-300 px-4 py-2 text-xs focus:outline-none focus:border-[var(--color-primary)] rounded-none"
+                  placeholder="Ex: Excel, PowerBI, Canva"
+                  value={newModuleOutils}
+                  onChange={(e) => setNewModuleOutils(e.target.value)}
+                />
+              </div>
+
+              <div className="pt-4 flex justify-end gap-2 border-t border-gray-100 mt-6">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowAddModuleModal(false);
+                    setEditingModule(null);
+                  }}
+                  className="px-4 py-2 border border-gray-300 text-xs font-bold uppercase tracking-wider hover:bg-gray-50 text-gray-600 rounded-none"
+                >
+                  Annuler
+                </button>
+                <button
+                  type="submit"
+                  className="px-6 py-2 bg-[var(--color-primary)] text-white text-xs font-bold uppercase tracking-wider hover:bg-[var(--color-accent)] transition-colors rounded-none"
+                >
+                  {editingModule !== null ? "Enregistrer" : "Créer"}
+                </button>
+              </div>
+            </form>
+          </motion.div>
+        </div>
+      )}
+
+      {/* Modal: Add/Edit Article */}
+      {showAddArticleModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="bg-white p-8 w-full max-w-lg border border-gray-200 shadow-2xl text-gray-800 rounded-none"
+          >
+            <div className="flex justify-between items-center mb-6 border-b border-gray-100 pb-3">
+              <h3 className="text-lg font-heading font-bold text-[var(--color-primary)]">
+                {editingArticleId !== null ? "Modifier l'article" : "Rédiger un article"}
+              </h3>
+              <button onClick={() => {
+                setShowAddArticleModal(false);
+                setEditingArticleId(null);
+              }} className="text-gray-400 hover:text-gray-600">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleAddOrEditArticle} className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-1.5">Catégorie</label>
+                  <input
+                    type="text"
+                    className="w-full bg-gray-50 border border-gray-300 px-4 py-2 text-xs focus:outline-none focus:border-[var(--color-primary)] rounded-none"
+                    placeholder="Ex: Conseils, Événements"
+                    value={articleCategory}
+                    onChange={(e) => setArticleCategory(e.target.value)}
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-1.5">Auteur</label>
+                  <input
+                    type="text"
+                    className="w-full bg-gray-50 border border-gray-300 px-4 py-2 text-xs focus:outline-none focus:border-[var(--color-primary)] rounded-none"
+                    placeholder="Ex: Direction, Ousmane Condé"
+                    value={articleAuthor}
+                    onChange={(e) => setArticleAuthor(e.target.value)}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-1.5">Titre de l'article *</label>
+                <input
+                  type="text"
+                  required
+                  className="w-full bg-gray-50 border border-gray-300 px-4 py-2 text-xs focus:outline-none focus:border-[var(--color-primary)] rounded-none"
+                  placeholder="Ex: Nouveau module Excel"
+                  value={articleTitle}
+                  onChange={(e) => setArticleTitle(e.target.value)}
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-1.5">Image de couverture</label>
+                <select
+                  className="w-full bg-gray-50 border border-gray-300 px-4 py-2 text-xs focus:outline-none focus:border-[var(--color-primary)] rounded-none"
+                  value={articleImage}
+                  onChange={(e) => setArticleImage(e.target.value)}
+                >
+                  <option value="/images/news_hero.png">Actualités (news_hero.png)</option>
+                  <option value="/images/about.png">À propos (about.png)</option>
+                  <option value="/images/hero.png">Formation (hero.png)</option>
+                  <option value="/images/gallery.png">Galerie (gallery.png)</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-1.5">Contenu / Extrait *</label>
+                <textarea
+                  rows={4}
+                  required
+                  className="w-full bg-gray-50 border border-gray-300 px-4 py-2 text-xs focus:outline-none focus:border-[var(--color-primary)] rounded-none"
+                  placeholder="Rédigez le texte court ou l'extrait de l'article..."
+                  value={articleExcerpt}
+                  onChange={(e) => setArticleExcerpt(e.target.value)}
+                ></textarea>
+              </div>
+
+              <div className="pt-4 flex justify-end gap-2 border-t border-gray-100 mt-6">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowAddArticleModal(false);
+                    setEditingArticleId(null);
+                  }}
+                  className="px-4 py-2 border border-gray-300 text-xs font-bold uppercase tracking-wider hover:bg-gray-50 text-gray-600 rounded-none"
+                >
+                  Annuler
+                </button>
+                <button
+                  type="submit"
+                  className="px-6 py-2 bg-[var(--color-primary)] text-white text-xs font-bold uppercase tracking-wider hover:bg-[var(--color-accent)] transition-colors rounded-none"
+                >
+                  {editingArticleId !== null ? "Enregistrer" : "Publier"}
+                </button>
+              </div>
+            </form>
+          </motion.div>
+        </div>
+      )}
+
+      {/* Modal: View Inscription details */}
+      {selectedRequest && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="bg-white p-8 w-full max-w-lg border border-gray-200 shadow-2xl text-gray-800 rounded-none"
+          >
+            <div className="flex justify-between items-center mb-6 border-b border-gray-100 pb-3">
+              <div>
+                <span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">{selectedRequest.id}</span>
+                <h3 className="text-lg font-heading font-bold text-[var(--color-primary)]">Fiche d'inscription</h3>
+              </div>
+              <button onClick={() => setSelectedRequest(null)} className="text-gray-400 hover:text-gray-600">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="space-y-4 text-xs">
+              <div className="grid grid-cols-2 gap-4 bg-gray-50 p-4 border border-gray-200">
+                <div>
+                  <span className="block text-[9px] uppercase tracking-wider font-bold text-gray-400">Nom Complet</span>
+                  <span className="font-bold text-[var(--color-primary)]">{selectedRequest.fullName}</span>
+                </div>
+                <div>
+                  <span className="block text-[9px] uppercase tracking-wider font-bold text-gray-400">Téléphone</span>
+                  <span className="font-bold">{selectedRequest.phone}</span>
+                </div>
+                <div className="mt-2">
+                  <span className="block text-[9px] uppercase tracking-wider font-bold text-gray-400">Adresse Email</span>
+                  <span className="font-bold">{selectedRequest.email}</span>
+                </div>
+                <div className="mt-2">
+                  <span className="block text-[9px] uppercase tracking-wider font-bold text-gray-400">Date d'envoi</span>
+                  <span className="font-bold">
+                    {new Date(selectedRequest.date).toLocaleString("fr-FR")}
+                  </span>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <span className="block text-[9px] uppercase tracking-wider font-bold text-gray-400">Type de demande</span>
+                  <span className="font-semibold text-gray-700">{selectedRequest.requestType}</span>
+                </div>
+                <div>
+                  <span className="block text-[9px] uppercase tracking-wider font-bold text-gray-400">Domaine de formation</span>
+                  <span className="font-semibold text-gray-700">{selectedRequest.domain}</span>
+                </div>
+              </div>
+
+              {selectedRequest.company && (
+                <div>
+                  <span className="block text-[9px] uppercase tracking-wider font-bold text-gray-400">Entreprise / Organisation</span>
+                  <span className="font-semibold text-[var(--color-primary)]">{selectedRequest.company}</span>
+                </div>
+              )}
+
+              {selectedRequest.message && (
+                <div className="border-t border-gray-100 pt-3">
+                  <span className="block text-[9px] uppercase tracking-wider font-bold text-gray-400 mb-1">Message & besoins spécifiques</span>
+                  <div className="bg-gray-50/50 border border-gray-200 p-3 text-gray-600 whitespace-pre-line leading-relaxed italic">
+                    "{selectedRequest.message}"
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="pt-4 flex justify-end gap-2 border-t border-gray-100 mt-6">
+              <button
+                type="button"
+                onClick={() => setSelectedRequest(null)}
+                className="px-4 py-2 border border-gray-300 text-xs font-bold uppercase tracking-wider hover:bg-gray-50 text-gray-600 rounded-none"
+              >
+                Fermer
+              </button>
+              {selectedRequest.status === "En attente" && (
+                <>
+                  <button
+                    onClick={() => {
+                      handleUpdateInscriptionStatus(selectedRequest.id, "Validé");
+                      setSelectedRequest(null);
+                    }}
+                    className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-xs font-bold uppercase tracking-wider transition-colors rounded-none"
+                  >
+                    Valider le dossier
+                  </button>
+                  <button
+                    onClick={() => {
+                      handleUpdateInscriptionStatus(selectedRequest.id, "Annulé");
+                      setSelectedRequest(null);
+                    }}
+                    className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-xs font-bold uppercase tracking-wider transition-colors rounded-none"
+                  >
+                    Rejeter
+                  </button>
+                </>
+              )}
+            </div>
+          </motion.div>
+        </div>
+      )}
+
+      {/* Modal: View Contact Message details */}
+      {selectedMessage && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="bg-white p-8 w-full max-w-lg border border-gray-200 shadow-2xl text-gray-800 rounded-none"
+          >
+            <div className="flex justify-between items-center mb-6 border-b border-gray-100 pb-3">
+              <div>
+                <span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">{selectedMessage.id}</span>
+                <h3 className="text-lg font-heading font-bold text-[var(--color-primary)]">Message de contact</h3>
+              </div>
+              <button onClick={() => setSelectedMessage(null)} className="text-gray-400 hover:text-gray-600">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="space-y-4 text-xs">
+              <div className="bg-gray-50 p-4 border border-gray-200 space-y-2">
+                <div className="flex justify-between">
+                  <div>
+                    <span className="block text-[8px] uppercase tracking-wider font-bold text-gray-400">Expéditeur</span>
+                    <span className="font-bold text-[var(--color-primary)]">{selectedMessage.fullName}</span>
+                  </div>
+                  <div className="text-right">
+                    <span className="block text-[8px] uppercase tracking-wider font-bold text-gray-400">Date de réception</span>
+                    <span className="font-bold">{new Date(selectedMessage.date).toLocaleString("fr-FR")}</span>
+                  </div>
+                </div>
+                <div>
+                  <span className="block text-[8px] uppercase tracking-wider font-bold text-gray-400">Email</span>
+                  <span className="font-bold">{selectedMessage.email}</span>
+                </div>
+              </div>
+
+              <div>
+                <span className="block text-[9px] uppercase tracking-wider font-bold text-gray-400 mb-1">Sujet / Objet</span>
+                <span className="font-bold text-gray-800 text-sm">{selectedMessage.subject}</span>
+              </div>
+
+              <div className="border-t border-gray-100 pt-3">
+                <span className="block text-[9px] uppercase tracking-wider font-bold text-gray-400 mb-1">Contenu du message</span>
+                <div className="bg-gray-50/50 border border-gray-200 p-4 text-gray-600 whitespace-pre-line leading-relaxed italic">
+                  "{selectedMessage.message}"
+                </div>
+              </div>
+            </div>
+
+            <div className="pt-4 flex justify-end gap-2 border-t border-gray-100 mt-6">
+              <button
+                type="button"
+                onClick={() => setSelectedMessage(null)}
+                className="px-6 py-2 bg-[var(--color-primary)] text-white text-xs font-bold uppercase tracking-wider hover:bg-[var(--color-accent)] transition-colors rounded-none"
+              >
+                Fermer
+              </button>
+            </div>
+          </motion.div>
+        </div>
+      )}
+
+    </div>
+  );
+}

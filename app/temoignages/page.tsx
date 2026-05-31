@@ -1,13 +1,22 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { ChevronRight, Star, Quote } from "lucide-react";
 import { motion } from "framer-motion";
-import { testimonialsData } from "@/lib/data";
 import { SectionTitle } from "@/components/SectionTitle";
+import { db, Testimonial } from "@/lib/db";
 
 export default function TemoignagesPage() {
+  const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
+
+  useEffect(() => {
+    db.init();
+    // Only show active testimonials
+    setTestimonials(db.getTestimonials().filter(t => t.active));
+  }, []);
+
   return (
     <>
       <section className="bg-[var(--color-primary)] py-20 relative overflow-hidden">
@@ -39,8 +48,7 @@ export default function TemoignagesPage() {
           />
           
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 mt-16">
-            {/* Duplicating testimonials slightly for the page to look full */}
-            {[...testimonialsData, ...testimonialsData].map((testimonial, index) => (
+            {testimonials.map((testimonial, index) => (
               <motion.div
                 key={index}
                 initial={{ opacity: 0, y: 30 }}

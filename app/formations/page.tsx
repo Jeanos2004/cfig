@@ -1,11 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronRight, ArrowRight, BookOpen, Layers, CheckCircle2 } from "lucide-react";
-import { formationsData } from "@/lib/data";
+import { db } from "@/lib/db";
 
 const generateSlug = (text: string) => {
   return text
@@ -29,12 +29,18 @@ const categoryImages: Record<string, string> = {
 
 export default function FormationsPage() {
   const [activeCategory, setActiveCategory] = useState<string>("Tous");
+  const [formations, setFormations] = useState<any[]>([]);
 
-  const categories = ["Tous", ...formationsData.map((f) => f.categorie)];
+  useEffect(() => {
+    db.init();
+    setFormations(db.getFormations());
+  }, []);
 
-  const filteredFormations = formationsData.reduce((acc, cat) => {
+  const categories = ["Tous", ...Array.from(new Set(formations.map((f) => f.categorie)))];
+
+  const filteredFormations = formations.reduce((acc, cat) => {
     if (activeCategory === "Tous" || activeCategory === cat.categorie) {
-      cat.modules.forEach((mod) => {
+      cat.modules.forEach((mod: any) => {
         acc.push({
           ...mod,
           categorie: cat.categorie,
@@ -98,7 +104,7 @@ export default function FormationsPage() {
           {/* Grid */}
           <motion.div layout className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             <AnimatePresence mode="popLayout">
-              {filteredFormations.map((formation) => {
+              {filteredFormations.map((formation: any) => {
                 const imageSrc = categoryImages[formation.categorie] || "/images/gallery.png";
                 return (
                   <motion.div

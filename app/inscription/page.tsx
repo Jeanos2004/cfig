@@ -1,12 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useForm } from "react-hook-form";
 import { ChevronRight, CheckCircle, Send, MessageCircle } from "lucide-react";
 import { motion } from "framer-motion";
-import { formationsData } from "@/lib/data";
+import { db } from "@/lib/db";
 
 type FormData = {
   fullName: string;
@@ -20,7 +20,12 @@ type FormData = {
 
 export default function InscriptionPage() {
   const [isSubmitted, setIsSubmitted] = useState(false);
-  const categories = formationsData.map((f) => f.categorie);
+  const [categories, setCategories] = useState<string[]>([]);
+
+  useEffect(() => {
+    db.init();
+    setCategories(db.getFormations().map((f) => f.categorie));
+  }, []);
 
   const {
     register,
@@ -34,9 +39,16 @@ export default function InscriptionPage() {
   });
 
   const onSubmit = async (data: FormData) => {
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    console.log("Form Data Submitted:", data);
+    await new Promise((resolve) => setTimeout(resolve, 800));
+    db.addInscription({
+      fullName: data.fullName,
+      email: data.email,
+      phone: data.phone,
+      company: data.company,
+      requestType: data.requestType,
+      domain: data.domain,
+      message: data.message,
+    });
     setIsSubmitted(true);
   };
 

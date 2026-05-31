@@ -1,43 +1,20 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { ChevronRight, Calendar, User, ArrowRight } from "lucide-react";
 import { motion } from "framer-motion";
 import { SectionTitle } from "@/components/SectionTitle";
-
 import Image from "next/image";
+import { db, Article } from "@/lib/db";
 
 export default function ActualitesPage() {
-  // Mock articles
-  const articles = [
-    {
-      id: 1,
-      title: "Cérémonie de remise des certificats - Promotion 2024",
-      excerpt: "Retour en images sur la cérémonie de remise des attestations aux 150 apprenants de la cohorte 2024. Un moment riche en émotions et en opportunités.",
-      date: "15 Mai 2024",
-      author: "Direction",
-      category: "Événements",
-      image: "/images/gallery.png"
-    },
-    {
-      id: 2,
-      title: "L'importance de PowerBI dans la prise de décision stratégique",
-      excerpt: "Découvrez pourquoi maîtriser PowerBI est devenu un atout indispensable pour les managers et analystes en entreprise aujourd'hui.",
-      date: "02 Mai 2024",
-      author: "Ousmane Condé",
-      category: "Conseils",
-      image: "/images/about.png"
-    },
-    {
-      id: 3,
-      title: "Nouveau partenariat avec l'Université de Conakry",
-      excerpt: "CFIG Guinée est fier d'annoncer son partenariat stratégique pour accompagner les étudiants en fin de cycle vers l'employabilité.",
-      date: "20 Avril 2024",
-      author: "Relations Publiques",
-      category: "Partenariats",
-      image: "/images/hero.png"
-    }
-  ];
+  const [articles, setArticles] = useState<Article[]>([]);
+
+  useEffect(() => {
+    db.init();
+    setArticles(db.getArticles());
+  }, []);
 
   return (
     <>
