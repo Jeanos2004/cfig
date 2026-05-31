@@ -1,0 +1,45 @@
+@import "tailwindcss";
+
+@theme {
+  /* === CHARTE OFFICIELLE CFIG GUINÉE === */
+  --color-primary:    #1A3A6E;   /* bleu marine — navbar, hero, footer, titres */
+  --color-accent:     #2A8BC4;   /* bleu ciel — boutons CTA, badges, hover    */
+  --color-light:      #4B9FD5;   /* bleu clair — highlights, icônes, bordures  */
+  --color-white:      #FFFFFF;
+  --color-gray:       #F5F7FA;
+  --color-foreground: #1A1A2E;
+  --color-text-muted: #64748B;
+
+  /* Legacy aliases (used in older components) */
+  --color-secondary:   #2A8BC4;
+  --color-background:  #FFFFFF;
+  --color-surface:     #F5F7FA;
+
+  --font-sans:    var(--font-dm-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-heading: var(--font-playfair), ui-serif, Georgia, serif;
+  --font-mono:    var(--font-space), ui-monospace, SFMono-Regular, monospace;
+}
+
+:root {
+  --background: #FFFFFF;
+  --foreground: #1A1A2E;
+}
+
+body {
+  background-color: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+  scroll-behavior: smooth;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-heading);
+}
+
+.font-heading {
+  font-family: var(--font-heading);
+}
+
+.font-mono {
+  font-family: var(--font-mono);
+}

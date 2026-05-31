@@ -1,0 +1,140 @@
+import Link from "next/link";
+import { Mail, MapPin, Phone } from "lucide-react";
+
+export function Footer() {
+  return (
+    <footer className="bg-[var(--color-primary)] text-white pt-16 pb-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+
+        {/* Top accent line */}
+        <div className="h-1 bg-[var(--color-accent)] mb-12 w-full" />
+
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-10 mb-10">
+
+          {/* Brand */}
+          <div className="col-span-1">
+            <h3 className="text-xl font-heading font-bold text-white mb-4 tracking-tight">
+              CFIG <span className="text-[var(--color-light)]">Guinée</span>
+            </h3>
+            <p className="text-white/60 mb-6 text-sm leading-relaxed">
+              Cabinet de Formation Informatique de Gestion. Votre partenaire de référence pour le développement des compétences professionnelles à Conakry.
+            </p>
+            <div className="flex items-center gap-3">
+              {[
+                {
+                  label: "Facebook",
+                  path: "M22 12c0-5.523-4.477-10-10-10S2 6.477 2 12c0 4.991 3.657 9.128 8.438 9.878v-6.987h-2.54V12h2.54V9.797c0-2.506 1.492-3.89 3.777-3.89 1.094 0 2.238.195 2.238.195v2.46h-1.26c-1.243 0-1.63.771-1.63 1.562V12h2.773l-.443 2.89h-2.33v6.988C18.343 21.128 22 16.991 22 12z",
+                },
+                {
+                  label: "LinkedIn",
+                  path: "M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z",
+                },
+              ].map(({ label, path }) => (
+                <a
+                  key={label}
+                  href="#"
+                  aria-label={label}
+                  className="w-8 h-8 bg-white/10 hover:bg-[var(--color-accent)] flex items-center justify-center transition-colors"
+                >
+                  <svg className="w-4 h-4 fill-current text-white" viewBox="0 0 24 24">
+                    <path d={path} />
+                  </svg>
+                </a>
+              ))}
+            </div>
+          </div>
+
+          {/* Quick Links */}
+          <div>
+            <h4 className="text-sm font-sans font-bold text-white uppercase tracking-widest mb-5 pb-3 border-b border-white/10">
+              Liens Rapides
+            </h4>
+            <ul className="space-y-2.5">
+              {[
+                { label: "À Propos de nous", href: "/a-propos" },
+                { label: "Nos Formations", href: "/formations" },
+                { label: "Actualités & Blog", href: "/actualites" },
+                { label: "Galerie Photos", href: "/galerie" },
+                { label: "Nous Contacter", href: "/contact" },
+              ].map(({ label, href }) => (
+                <li key={href}>
+                  <Link
+                    href={href}
+                    className="text-white/60 hover:text-white transition-colors text-sm flex items-center gap-1.5 group"
+                  >
+                    <span className="w-3 h-[2px] bg-[var(--color-accent)] flex-shrink-0 group-hover:w-5 transition-all duration-200" />
+                    {label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {/* Formations */}
+          <div>
+            <h4 className="text-sm font-sans font-bold text-white uppercase tracking-widest mb-5 pb-3 border-b border-white/10">
+              Domaines
+            </h4>
+            <ul className="space-y-2.5">
+              {[
+                "Informatique Bureautique",
+                "Gestion & Comptabilité",
+                "Logistique & Transport",
+                "Analyse de Données",
+                "Communication Digitale",
+              ].map((item) => (
+                <li key={item} className="text-white/60 text-sm flex items-center gap-1.5">
+                  <span className="w-3 h-[2px] bg-[var(--color-light)]/50 flex-shrink-0" />
+                  {item}
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {/* Contact */}
+          <div>
+            <h4 className="text-sm font-sans font-bold text-white uppercase tracking-widest mb-5 pb-3 border-b border-white/10">
+              Contact
+            </h4>
+            <ul className="space-y-4">
+              <li className="flex items-start gap-3">
+                <MapPin className="w-4 h-4 text-[var(--color-light)] flex-shrink-0 mt-0.5" />
+                <span className="text-white/60 text-sm leading-relaxed">
+                  Lambanyi-Marché, Ratoma,<br />Conakry, République de Guinée
+                </span>
+              </li>
+              <li className="flex items-center gap-3">
+                <Phone className="w-4 h-4 text-[var(--color-light)] flex-shrink-0" />
+                <div className="space-y-1">
+                  <a href="tel:+224622886773" className="block text-white/60 hover:text-white text-sm transition-colors">
+                    +224 622 88 67 73
+                  </a>
+                  <a href="tel:+224626625162" className="block text-white/60 hover:text-white text-sm transition-colors">
+                    +224 626 62 51 62
+                  </a>
+                </div>
+              </li>
+              <li className="flex items-center gap-3">
+                <Mail className="w-4 h-4 text-[var(--color-light)] flex-shrink-0" />
+                <a href="mailto:cfigguinee@gmail.com" className="text-white/60 hover:text-white text-sm transition-colors">
+                  cfigguinee@gmail.com
+                </a>
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        {/* Bottom bar */}
+        <div className="border-t border-white/10 pt-6 flex flex-col md:flex-row justify-between items-center gap-4">
+          <p className="text-white/40 text-xs text-center md:text-left">
+            &copy; {new Date().getFullYear()} CFIG Guinée SARLU. Tous droits réservés.
+          </p>
+          <div className="flex gap-4 text-xs text-white/40">
+            <a href="#" className="hover:text-white transition-colors">Mentions légales</a>
+            <a href="#" className="hover:text-white transition-colors">Confidentialité</a>
+          </div>
+        </div>
+      </div>
+    </footer>
+  );
+}

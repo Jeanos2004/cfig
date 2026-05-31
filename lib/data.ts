@@ -1,0 +1,126 @@
+export const formationsData = [
+  {
+    categorie: "Informatique Bureautique",
+    modules: [
+      { titre: "Initiation Bureautique", outils: ["Windows", "Word", "Excel", "PowerPoint"] },
+      { titre: "Excel Avancé", outils: ["Microsoft Excel"] }
+    ]
+  },
+  {
+    categorie: "Gestion",
+    modules: [
+      { titre: "Gestion Comptable", outils: ["Sage Comptabilité", "Excel"] },
+      { titre: "Gestion Commerciale", outils: ["Sage Gestion Commerciale", "Excel"] },
+      { titre: "Gestion de la Paie", outils: ["Sage Paie et RH", "Excel"] },
+      { titre: "Management RH – Auditeur Social", outils: ["Sage Paie et RH", "Excel"] },
+      { titre: "Responsable Administratif et Financier", outils: ["Excel"] }
+    ]
+  },
+  {
+    categorie: "Logistique et Transport",
+    modules: [
+      { titre: "Responsable Logistique", outils: ["Excel"] },
+      { titre: "Responsable Achat et Approvisionnement", outils: ["Excel"] },
+      { titre: "Gestionnaire de Stock", outils: ["Excel"] },
+      { titre: "Logistique Minière", outils: ["Excel"] }
+    ]
+  },
+  {
+    categorie: "QHSE",
+    modules: [
+      { titre: "Superviseur HSE", outils: [] }
+    ]
+  },
+  {
+    categorie: "Analyse des Données",
+    modules: [
+      { titre: "Tableau de bord avec Excel", outils: ["Excel", "PowerPivot", "PowerQuery"] },
+      { titre: "Tableau de bord avec PowerBI", outils: ["PowerBI Desktop", "PowerBI Services", "PowerBI Mobile", "PowerPivot", "PowerQuery"] },
+      { titre: "Collecte et Analyse des Données", outils: ["KoboCollect", "KoboToolbox"] }
+    ]
+  },
+  {
+    categorie: "Communication Digitale",
+    modules: [
+      { titre: "Community Management", outils: ["Facebook", "WhatsApp Business", "Canva", "ChatGPT"] },
+      { titre: "Marketing Digital", outils: ["Facebook", "Instagram", "LinkedIn", "Wix", "Email Marketing", "Canva", "Filmora"] },
+      { titre: "Communication Institutionnelle", outils: [] }
+    ]
+  },
+  {
+    categorie: "Infographie",
+    modules: [
+      { titre: "Conception de Visuels", outils: ["Adobe Photoshop", "Adobe Illustrator"] }
+    ]
+  },
+  {
+    categorie: "Suivi-Évaluation de Projets",
+    modules: [
+      { titre: "Montage Suivi et Évaluation des Projets", outils: ["MS Project", "KoboCollect", "SPSS"] }
+    ]
+  }
+];
+
+export const statsData = [
+  { value: "500+", label: "Apprenants formés" },
+  { value: "8", label: "Domaines de formation" },
+  { value: "10+", label: "Experts formateurs" },
+  { value: "95%", label: "De satisfaction" }
+];
+
+export const testimonialsData = [
+  {
+    name: "Amadou Diallo",
+    role: "Responsable Logistique",
+    initials: "AD",
+    color: "bg-blue-100 text-blue-800",
+    text: "La formation en Logistique m'a permis d'optimiser les flux de mon entreprise. Les formateurs sont des experts de terrain.",
+    rating: 5
+  },
+  {
+    name: "Fatoumata Camara",
+    role: "Comptable",
+    initials: "FC",
+    color: "bg-amber-100 text-amber-800",
+    text: "Excellente formation sur Sage Comptabilité. J'ai pu mettre en pratique immédiatement ce que j'ai appris.",
+    rating: 5
+  },
+  {
+    name: "Mamadou Barry",
+    role: "Entrepreneur",
+    initials: "MB",
+    color: "bg-green-100 text-green-800",
+    text: "L'accompagnement de CFIG pour notre transformation digitale a été un vrai succès.",
+    rating: 4
+  }
+];
+
+export const teamData = [
+  { name: "Ousmane Condé", role: "Directeur & Formateur Gestion", initials: "OC" },
+  { name: "Aissatou Sylla", role: "Formatrice Communication", initials: "AS" },
+  { name: "Ibrahima Keita", role: "Expert Logistique", initials: "IK" },
+  { name: "Mariam Sow", role: "Consultante RH", initials: "MS" }
+];
+
+export const servicesData = [
+  {
+    title: "Formation Professionnelle",
+    description: "Des programmes adaptés aux besoins réels des entreprises pour monter en compétences.",
+    icon: "GraduationCap"
+  },
+  {
+    title: "Consulting Stratégique",
+    description: "Accompagnement sur mesure pour optimiser vos processus et votre organisation.",
+    icon: "Briefcase"
+  },
+  {
+    title: "Implémentation Logicielles",
+    description: "Déploiement et paramétrage de solutions comme Sage, PowerBI.",
+    icon: "Laptop"
+  },
+  {
+    title: "Support Continu",
+    description: "Un suivi post-formation ou post-déploiement pour garantir votre succès.",
+    icon: "LifeBuoy"
+  }
+];
