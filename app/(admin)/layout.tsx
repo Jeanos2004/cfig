@@ -6,12 +6,9 @@ export const metadata: Metadata = {
 };
 
 /**
- * Layout isolé pour la section /admin.
- * Ce layout remplace le root layout pour toutes les routes sous /admin :
- * - Pas de Navbar publique
- * - Pas de Footer publique
- * - Pas de bouton WhatsApp
- * Le dashboard gère sa propre interface complète.
+ * Layout isolé pour la section admin.
+ * Aucune Navbar publique, aucun Footer, aucun bouton WhatsApp.
+ * Le dashboard gère son propre shell avec sidebar intégrée.
  */
 export default function AdminLayout({
   children,
@@ -19,7 +16,7 @@ export default function AdminLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="admin-shell">
+    <div className="admin-shell min-h-screen">
       {children}
     </div>
   );

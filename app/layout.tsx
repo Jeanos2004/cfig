@@ -1,9 +1,6 @@
 import type { Metadata } from "next";
 import { Playfair_Display, DM_Sans, Space_Grotesk } from "next/font/google";
 import "./globals.css";
-import { Navbar } from "@/components/Navbar";
-import { Footer } from "@/components/Footer";
-import { WhatsAppButton } from "@/components/WhatsAppButton";
 
 const playfair = Playfair_Display({
   subsets: ["latin"],
@@ -24,25 +21,24 @@ const spaceGrotesk = Space_Grotesk({
 });
 
 export const metadata: Metadata = {
-  title: "CFIG Guinée - Cabinet de Formation Informatique de Gestion",
-  description: "Cabinet de référence en formation professionnelle à Conakry. Informatique, gestion, logistique, communication, analyse de données.",
+  title: "CFIG Guinée — Cabinet de Formation Informatique de Gestion",
+  description:
+    "Cabinet de référence en formation professionnelle à Conakry. Informatique, gestion, logistique, communication, analyse de données.",
 };
 
+/**
+ * Root layout minimal — délègue tout aux layouts enfants.
+ * Fournit uniquement le HTML shell, les polices et le CSS global.
+ */
 export default function RootLayout({
   children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+}: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="fr" className={`${playfair.variable} ${dmSans.variable} ${spaceGrotesk.variable}`}>
-      <body className="flex flex-col min-h-screen bg-[var(--color-surface)]">
-        <Navbar />
-        <main className="flex-grow">
-          {children}
-        </main>
-        <Footer />
-        <WhatsAppButton />
-      </body>
+    <html
+      lang="fr"
+      className={`${playfair.variable} ${dmSans.variable} ${spaceGrotesk.variable}`}
+    >
+      <body>{children}</body>
     </html>
   );
 }
