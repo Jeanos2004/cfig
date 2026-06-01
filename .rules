@@ -1,0 +1,202 @@
+# CFIG Guinée — Règles du Projet
+
+## 🏢 Contexte
+
+Site web + Dashboard d'administration du **Cabinet de Formation Informatique de Gestion — CFIG Guinée SARLU**.
+Basé à Lambanyi-Marché, Ratoma, Conakry, République de Guinée.
+Contact : +224 622 88 67 73 | cfigguinee@gmail.com
+Tagline : *Former pour performer*
+
+---
+
+## 🛠️ Stack Technique
+
+| Élément | Technologie |
+|---|---|
+| Framework | Next.js 16.x (App Router, Turbopack) |
+| Langage | TypeScript strict |
+| Styling | Tailwind CSS v4 (via `@theme` dans globals.css) |
+| Animations | Framer Motion |
+| Icônes | Lucide React |
+| Formulaires | React Hook Form |
+| Fonts | next/font/google (Playfair Display + DM Sans + Space Grotesk) |
+| Images | next/image |
+| État / DB Client | localStorage via `lib/db.ts` |
+
+---
+
+## 🎨 Charte Graphique — Variables CSS Officielles
+
+Toutes les couleurs sont définies via `@theme` dans `app/globals.css`. **Ne jamais utiliser de valeurs hex directes.** Toujours utiliser les variables CSS suivantes :
+
+```css
+--color-primary:  #1A3A6E   /* bleu marine — navbar, hero, footer, titres */
+--color-accent:   #2A8BC4   /* bleu ciel — boutons CTA, badges, hover */
+--color-light:    #4B9FD5   /* bleu clair — highlights, icônes, bordures */
+--color-white:    #FFFFFF
+--color-gray:     #F5F7FA   /* fond sections alternées */
+```
+
+### Règles de style impératives
+- ❌ **Pas de couleur dorée** (`#D4A853`, `#F59E0B`, `#EAB308`, `#c29642`, etc.)
+- ❌ **Pas de dégradés** (`bg-gradient-*`, `linear-gradient`, etc.)
+- ❌ **Pas de coins arrondis sur les boutons** (`rounded-full`, `rounded-xl`)
+- ✅ Boutons **rectangulaires plats** (style Schule)
+- ✅ Palette **bleu uniquement**
+
+### Typographie
+```
+Titres  : font-heading  (Playfair Display)
+Corps   : font-sans     (DM Sans)
+Accents : font-mono     (Space Grotesk — stats, badges uniquement)
+```
+
+---
+
+## 🏗️ Architecture du Projet
+
+```
+cfig/
+├── app/
+│   ├── layout.tsx                    ← Root minimal (HTML shell + fonts + CSS)
+│   ├── globals.css                   ← Variables CSS + Tailwind @theme
+│   ├── favicon.ico
+│   │
+│   ├── (marketing)/                  ← SITE PUBLIC (Navbar + Footer + WhatsApp)
+│   │   ├── layout.tsx                ← Layout public avec Navbar/Footer/WhatsApp
+│   │   ├── page.tsx                  → /
+│   │   ├── a-propos/page.tsx         → /a-propos
+│   │   ├── actualites/page.tsx       → /actualites
+│   │   ├── contact/page.tsx          → /contact
+│   │   ├── formations/page.tsx       → /formations
+│   │   ├── formations/[slug]/page.tsx→ /formations/[slug]
+│   │   ├── galerie/page.tsx          → /galerie
+│   │   ├── inscription/page.tsx      → /inscription
+│   │   └── temoignages/page.tsx      → /temoignages
+│   │
+│   └── (admin)/                      ← DASHBOARD ADMIN (layout isolé)
+│       ├── layout.tsx                ← Pas de Navbar/Footer public
+│       └── admin/page.tsx            → /admin
+│
+├── components/
+│   ├── Navbar.tsx                    ← Top bar + nav principale responsive
+│   ├── Footer.tsx                    ← Footer 3 colonnes
+│   ├── WhatsAppButton.tsx            ← Bouton flottant WhatsApp
+│   └── SectionTitle.tsx              ← Titre de section réutilisable
+│
+├── lib/
+│   ├── data.ts                       ← Données statiques de base (formations, stats, équipe…)
+│   ├── db.ts                         ← Moteur DB client (localStorage CRUD)
+│   └── utils.ts                      ← Utilitaires (cn, etc.)
+│
+└── public/
+    └── images/
+        ├── hero.png                  ← Image hero accueil + formations
+        ├── about.png                 ← Image pages à propos + contact
+        ├── gallery.png               ← Image galerie + actualités
+        ├── news_hero.png             ← Hero page Actualités
+        ├── contact_hero.png          ← Hero page Contact
+        ├── inscription_hero.png      ← Hero page Inscription
+        └── testimonials_hero.png     ← Hero page Témoignages
+```
+
+---
+
+## 🗃️ Base de Données Client (`lib/db.ts`)
+
+Le site utilise `localStorage` comme couche de persistance. Toute modification dans le dashboard est reflétée **instantanément** sur le site public.
+
+### Entités gérées
+| Clé localStorage | Type | Description |
+|---|---|---|
+| `cfig_formations` | `CategorieFormations[]` | Catalogue des formations |
+| `cfig_articles` | `Article[]` | Articles de blog |
+| `cfig_inscriptions` | `InscriptionRequest[]` | Demandes d''inscription/devis |
+| `cfig_messages` | `ContactMessage[]` | Messages du formulaire contact |
+| `cfig_testimonials` | `Testimonial[]` | Témoignages alumni |
+
+### Utilisation
+```typescript
+import { db } from "@/lib/db";
+
+// Initialiser (à appeler dans useEffect au premier montage)
+db.init();
+
+// Lire
+const formations = db.getFormations();
+const articles   = db.getArticles();
+
+// Écrire
+db.saveFormations(updatedList);
+db.addInscription({ fullName, email, phone, ... });
+db.addMessage({ fullName, email, subject, message });
+```
+
+---
+
+## 🔒 Dashboard Admin (`/admin`)
+
+- **URL** : `/admin`
+- **Accès** : identifiants de démo → `admin` / `admin` (sessionStorage token)
+- **Layout** : complètement isolé du site public (pas de Navbar/Footer)
+- **Onglets** :
+  1. Vue d''ensemble (KPIs + graphiques)
+  2. Inscriptions & Devis (tableau + validation/rejet)
+  3. Formations & Modules (CRUD complet)
+  4. Blog & Actualités (CRUD complet)
+  5. Témoignages Alumni (activation/désactivation)
+  6. Messages de Contact (lecture + suppression)
+
+---
+
+## 📋 Règles de Code
+
+### Composants
+- `"use client"` obligatoire pour tout composant avec state ou hooks
+- Types TypeScript stricts — pas de `any` sauf cas justifié
+- Props typées avec des interfaces dédiées, pas de types inline
+- Imports regroupés : React → Next → Librairies externes → Composants internes → Lib/data
+
+### Pages
+- Chaque page doit avoir un **hero banner** avec image de fond à `opacity-20` sur fond `--color-primary`
+- Breadcrumb obligatoire dans chaque hero
+- Animations `framer-motion` : `initial={{ opacity: 0, y: 20 }}`, `whileInView={{ opacity: 1, y: 0 }}`, `viewport={{ once: true }}`
+- `useEffect` + `db.init()` pour charger les données dynamiques
+
+### Images
+- Toujours utiliser `next/image` avec `fill` ou `width/height`
+- `priority` sur les images au-dessus de la ligne de flottaison (heroes)
+- Toutes les images locales dans `/public/images/`
+
+### Données
+- Données statiques de référence dans `lib/data.ts`
+- Données dynamiques (modifiables via admin) via `lib/db.ts`
+- Ne jamais hardcoder du contenu directement dans les composants
+
+---
+
+## 🚀 Commandes Utiles
+
+```bash
+# Démarrer le serveur de développement
+npm run dev
+
+# Compiler en production (vérification)
+npm run build
+
+# Lancer la version de production compilée
+npm run start
+```
+
+---
+
+## 📞 Données de Contact CFIG
+
+```
+Cabinet de Formation Informatique de Gestion — CFIG Guinée SARLU
+Adresse   : Lambanyi-Marché, Ratoma, Conakry, République de Guinée
+Téléphones: +224 622 88 67 73 / +224 626 62 51 62
+Email     : cfigguinee@gmail.com
+WhatsApp  : +224 622 88 67 73 (lien: https://wa.me/224622886773)
+Horaires  : Lundi–Vendredi 8h–18h | Samedi 9h–13h
+```
