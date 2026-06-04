@@ -125,7 +125,7 @@ export default function ContactPage() {
                   </div>
                   <div>
                     <h3 className="font-semibold text-lg mb-1">Adresse</h3>
-                    <p className="text-gray-300">Lambanyi-Marché, Ratoma<br/>Conakry, République de Guinée</p>
+                    <p className="text-gray-300">Lambanyi-Marché Transversal enco5-lambanyi<br/>Conakry, République de Guinée</p>
                   </div>
                 </div>
                 
@@ -135,7 +135,7 @@ export default function ContactPage() {
                   </div>
                   <div>
                     <h3 className="font-semibold text-lg mb-1">Téléphones</h3>
-                    <p className="text-gray-300">+224 622 88 67 73<br/>+224 626 62 51 62</p>
+                    <p className="text-gray-300">+224 626 62 51 62</p>
                   </div>
                 </div>
                 
@@ -145,7 +145,7 @@ export default function ContactPage() {
                   </div>
                   <div>
                     <h3 className="font-semibold text-lg mb-1">Email</h3>
-                    <p className="text-gray-300">cfigguinee@gmail.com</p>
+                    <p className="text-gray-300">contact@cfig-guinee.com</p>
                   </div>
                 </div>
                 
@@ -155,7 +155,7 @@ export default function ContactPage() {
                   </div>
                   <div>
                     <h3 className="font-semibold text-lg mb-1">Heures d'ouverture</h3>
-                    <p className="text-gray-300">Lundi - Vendredi : 8h - 18h<br/>Samedi : 9h - 13h</p>
+                    <p className="text-gray-300">Tous les jours : 09h - 20h</p>
                   </div>
                 </div>
               </div>
