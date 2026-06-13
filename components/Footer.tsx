@@ -13,6 +13,7 @@ export function Footer() {
 
           {/* Brand */}
           <div className="col-span-1">
+            <img src="/logo.jpeg" alt="CFIG Guinée Logo" className="h-12 w-auto object-contain mb-4 bg-white rounded-sm" />
             <h3 className="text-xl font-heading font-bold text-white mb-4 tracking-tight">
               CFIG <span className="text-[var(--color-light)]">Guinée</span>
             </h3>

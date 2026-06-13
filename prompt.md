@@ -210,7 +210,7 @@ Formulaire complet avec React Hook Form :
 - Message / Besoins spécifiques : textarea
 - Bouton submit : "Envoyer ma demande"
 - Message de confirmation après soumission (pas de backend requis, juste UI state)
-- Note en bas : "Ou contactez-nous directement sur WhatsApp" + lien wa.me/+224622886773
+- Note en bas : "Ou contactez-nous directement sur WhatsApp" + lien wa.me/+224626625162
 
 ---
 

@@ -24,10 +24,13 @@ import {
   Calendar,
   Users,
   Award,
-  Settings
+  Settings,
+  Image as ImageIcon,
+  Video
 } from "lucide-react";
+import { MediaUploader } from "@/components/admin/MediaUploader";
 import { motion, AnimatePresence } from "framer-motion";
-import { db, CategorieFormations, ModuleItem, Article, InscriptionRequest, ContactMessage, Testimonial, SiteSettings, AdminUser } from "@/lib/db";
+import { db, CategorieFormations, ModuleItem, Article, InscriptionRequest, ContactMessage, Testimonial, SiteSettings, AdminUser, GalleryItem } from "@/lib/db";
 import { auth } from "@/lib/firebase";
 import { signInWithEmailAndPassword, signOut, onAuthStateChanged, createUserWithEmailAndPassword } from "firebase/auth";
 
@@ -43,7 +46,7 @@ export default function AdminPage() {
   const [authError, setAuthError] = useState("");
   
   // === ACTIVE TAB STATE ===
-  const [activeTab, setActiveTab] = useState<"overview" | "inscriptions" | "formations" | "actualites" | "testimonials" | "messages" | "settings" | "users">("overview");
+  const [activeTab, setActiveTab] = useState<"overview" | "inscriptions" | "formations" | "actualites" | "testimonials" | "galerie" | "messages" | "settings" | "users">("overview");
 
   // === DATA STATES ===
   const [formations, setFormations] = useState<CategorieFormations[]>([]);
@@ -51,6 +54,7 @@ export default function AdminPage() {
   const [inscriptions, setInscriptions] = useState<InscriptionRequest[]>([]);
   const [messages, setMessages] = useState<ContactMessage[]>([]);
   const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
+  const [gallery, setGallery] = useState<GalleryItem[]>([]);
   
   // Settings & Admins states
   const [settings, setSettings] = useState<SiteSettings | null>(null);
@@ -76,11 +80,33 @@ export default function AdminPage() {
 
   // === MODAL / CRUD FORM STATES ===
   const [showAddModuleModal, setShowAddModuleModal] = useState(false);
+  const [modalTab, setModalTab] = useState<1|2|3|4>(1);
+  // Onglet 1 — Infos Générales
   const [newModuleTitle, setNewModuleTitle] = useState("");
   const [newModuleCategory, setNewModuleCategory] = useState("");
   const [newModuleOutils, setNewModuleOutils] = useState("");
-  const [newModulePrix, setNewModulePrix] = useState<number | "">("");
+  const [newModulePrix, setNewModulePrix] = useState<number | "">("" );
+  const [newModulePrixInscription, setNewModulePrixInscription] = useState<number | "">("" );
+  const [newModuleMethodePaiement, setNewModuleMethodePaiement] = useState("");
   const [newModuleImage, setNewModuleImage] = useState("");
+  const [newModuleStatutInscription, setNewModuleStatutInscription] = useState<"Ouverte" | "Fermée">("Ouverte");
+  // Onglet 2 — Fiche Technique
+  const [newModuleDuree, setNewModuleDuree] = useState("");
+  const [newModuleDateDebut, setNewModuleDateDebut] = useState("");
+  const [newModuleCalendrier, setNewModuleCalendrier] = useState("");
+  const [newModuleHoraires, setNewModuleHoraires] = useState("");
+  const [newModulePlanning, setNewModulePlanning] = useState<{ jour: string; horaire: string }[]>([]);
+  // Onglet 3 — Pédagogie
+  const [newModulePresentation, setNewModulePresentation] = useState("");
+  const [newModuleObjectifs, setNewModuleObjectifs] = useState(""); // virgule-séparé
+  const [newModulePrerequis, setNewModulePrerequis] = useState(""); // virgule-séparé
+  const [newModulePublicCible, setNewModulePublicCible] = useState(""); // virgule-séparé
+  const [newModuleDebouches, setNewModuleDebouches] = useState(""); // virgule-séparé
+  // Onglet 4 — Programme détaillé
+  const [newModuleProgramme, setNewModuleProgramme] = useState<{ title: string; points: string }[]>([
+    { title: "", points: "" }
+  ]);
+
   const [editingModule, setEditingModule] = useState<{ catIndex: number; modIndex: number; oldTitle: string } | null>(null);
   const [isSavingModule, setIsSavingModule] = useState(false);
 
@@ -92,6 +118,13 @@ export default function AdminPage() {
   const [articleAuthor, setArticleAuthor] = useState("");
   const [articleImage, setArticleImage] = useState("/images/news_hero.png");
   const [editingArticleId, setEditingArticleId] = useState<number | null>(null);
+
+  const [showAddGalleryModal, setShowAddGalleryModal] = useState(false);
+  const [galleryTitle, setGalleryTitle] = useState("");
+  const [galleryCategory, setGalleryCategory] = useState("");
+  const [galleryMediaUrl, setGalleryMediaUrl] = useState("");
+  const [galleryMediaType, setGalleryMediaType] = useState<"image"|"video">("image");
+  const [editingGalleryId, setEditingGalleryId] = useState<string | null>(null);
 
   const [selectedRequest, setSelectedRequest] = useState<InscriptionRequest | null>(null);
   const [selectedMessage, setSelectedMessage] = useState<ContactMessage | null>(null);
@@ -105,6 +138,7 @@ export default function AdminPage() {
       setInscriptions(await db.getInscriptions());
       setMessages(await db.getMessages());
       setTestimonials(await db.getTestimonials());
+      setGallery(await db.getGallery());
       
       const siteSettings = await db.getSettings();
       setSettings(siteSettings);
@@ -180,6 +214,7 @@ export default function AdminPage() {
     setInscriptions(await db.getInscriptions());
     setMessages(await db.getMessages());
     setTestimonials(await db.getTestimonials());
+    setGallery(await db.getGallery());
     
     const siteSettings = await db.getSettings();
     setSettings(siteSettings);
@@ -267,6 +302,19 @@ export default function AdminPage() {
     }
   };
 
+  // Helper to reset all module form fields
+  const resetModuleForm = () => {
+    setModalTab(1);
+    setNewModuleTitle(""); setNewModuleCategory(""); setNewModuleOutils("");
+    setNewModulePrix(""); setNewModulePrixInscription(""); setNewModuleMethodePaiement("");
+    setNewModuleImage(""); setNewModuleStatutInscription("Ouverte");
+    setNewModuleDuree(""); setNewModuleDateDebut(""); setNewModuleCalendrier(""); setNewModuleHoraires("");
+    setNewModulePresentation(""); setNewModuleObjectifs(""); setNewModulePrerequis(""); setNewModulePublicCible("");
+    setNewModuleDebouches("");
+    setNewModulePlanning([]);
+    setNewModuleProgramme([{ title: "", points: "" }]);
+  };
+
   // 1. Formations CRUD
   const handleAddOrEditModule = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -278,39 +326,51 @@ export default function AdminPage() {
       const currentFormations = [...formations];
       const outilsArray = newModuleOutils.split(",").map(o => o.trim()).filter(Boolean);
 
+      // Build details object
+      const programme = newModuleProgramme
+        .filter(p => p.title.trim())
+        .map(p => ({ title: p.title.trim(), points: p.points.split("\n").map(x => x.trim()).filter(Boolean) }));
+
+      const details = {
+        statutInscription: newModuleStatutInscription,
+        ...(newModuleDuree.trim() && { duree: newModuleDuree.trim() }),
+        ...(newModuleDateDebut.trim() && { dateDebut: newModuleDateDebut.trim() }),
+        ...(newModulePresentation.trim() && { presentation: newModulePresentation.trim() }),
+        ...(newModuleObjectifs.trim() && { objectifs: newModuleObjectifs.split("\n").map(x => x.trim()).filter(Boolean) }),
+        ...(newModulePrerequis.trim() && { prerequis: newModulePrerequis.split("\n").map(x => x.trim()).filter(Boolean) }),
+        ...(newModulePublicCible.trim() && { publicCible: newModulePublicCible.split("\n").map(x => x.trim()).filter(Boolean) }),
+        ...(newModuleDebouches.trim() && { debouches: newModuleDebouches.split("\n").map(x => x.trim()).filter(Boolean) }),
+        ...(programme.length > 0 && { programme }),
+        planning: newModulePlanning,
+        calendrier: newModulePlanning.map(p => p.jour).join(", "),
+        horaires: newModulePlanning.map(p => `${p.jour}: ${p.horaire}`).join(", "),
+      };
+
+      const moduleData = {
+        titre: newModuleTitle,
+        outils: outilsArray,
+        ...(newModulePrix !== "" && { prix: Number(newModulePrix) }),
+        ...(newModulePrixInscription !== "" && { prixInscription: Number(newModulePrixInscription) }),
+        ...(newModuleMethodePaiement.trim() && { methodePaiement: newModuleMethodePaiement.trim() }),
+        ...(newModuleImage.trim() && { image: newModuleImage.trim() }),
+        details,
+      };
+
       if (editingModule !== null) {
-        // Edit
         const { catIndex, modIndex } = editingModule;
-        currentFormations[catIndex].modules[modIndex] = {
-          titre: newModuleTitle,
-          outils: outilsArray,
-          ...(newModulePrix !== "" && { prix: Number(newModulePrix) }),
-          ...(newModuleImage.trim() && { image: newModuleImage.trim() })
-        };
+        currentFormations[catIndex].modules[modIndex] = moduleData;
       } else {
-        // Add
         let cat = currentFormations.find(c => c.categorie.toLowerCase() === newModuleCategory.trim().toLowerCase());
         if (!cat) {
           cat = { categorie: newModuleCategory.trim(), modules: [] };
           currentFormations.push(cat);
         }
-        cat.modules.push({
-          titre: newModuleTitle,
-          outils: outilsArray,
-          ...(newModulePrix !== "" && { prix: Number(newModulePrix) }),
-          ...(newModuleImage.trim() && { image: newModuleImage.trim() })
-        });
+        cat.modules.push(moduleData);
       }
 
       await db.saveFormations(currentFormations);
       await refreshAllData();
-      
-      // Clear forms and close modal
-      setNewModuleTitle("");
-      setNewModuleCategory("");
-      setNewModuleOutils("");
-      setNewModulePrix("");
-      setNewModuleImage("");
+      resetModuleForm();
       setShowAddModuleModal(false);
       setEditingModule(null);
     } catch (error) {
@@ -337,11 +397,32 @@ export default function AdminPage() {
 
   const startEditModule = (catIndex: number, modIndex: number) => {
     const mod = formations[catIndex].modules[modIndex];
+    const d = mod.details;
+    setModalTab(1);
     setNewModuleTitle(mod.titre);
     setNewModuleCategory(formations[catIndex].categorie);
     setNewModuleOutils(mod.outils.join(", "));
     setNewModulePrix(mod.prix ?? "");
+    setNewModulePrixInscription(mod.prixInscription ?? "");
+    setNewModuleMethodePaiement(mod.methodePaiement ?? "");
     setNewModuleImage(mod.image ?? "");
+    setNewModuleStatutInscription(d?.statutInscription ?? "Ouverte");
+    setNewModuleDuree(d?.duree ?? "");
+    setNewModuleDateDebut(d?.dateDebut ?? "");
+    setNewModulePresentation(d?.presentation ?? "");
+    const initialPlanning = d?.planning ?? (
+      d?.calendrier 
+        ? d.calendrier.split(",").map(j => ({ jour: j.trim(), horaire: d.horaires || "18h00 - 20h00" }))
+        : []
+    );
+    setNewModulePlanning(initialPlanning);
+    setNewModuleObjectifs(d?.objectifs?.join("\n") ?? "");
+    setNewModulePrerequis(d?.prerequis?.join("\n") ?? "");
+    setNewModulePublicCible(d?.publicCible?.join("\n") ?? "");
+    setNewModuleDebouches(d?.debouches?.join("\n") ?? "");
+    setNewModuleProgramme(
+      d?.programme?.map(p => ({ title: p.title, points: p.points.join("\n") })) ?? [{ title: "", points: "" }]
+    );
     setEditingModule({ catIndex, modIndex, oldTitle: mod.titre });
     setShowAddModuleModal(true);
   };
@@ -418,7 +499,43 @@ export default function AdminPage() {
     await refreshAllData();
   };
 
-  // 4. Testimonials toggle active
+  // 4. Galerie CRUD
+  const handleAddOrEditGallery = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!galleryTitle || !galleryCategory || !galleryMediaUrl) return;
+
+    let currentGallery = [...gallery];
+    if (editingGalleryId) {
+      currentGallery = currentGallery.map(g =>
+        g.id === editingGalleryId ? { ...g, title: galleryTitle, category: galleryCategory, mediaUrl: galleryMediaUrl, mediaType: galleryMediaType } : g
+      );
+    } else {
+      const newItem: GalleryItem = {
+        id: Date.now().toString(),
+        title: galleryTitle,
+        category: galleryCategory,
+        mediaUrl: galleryMediaUrl,
+        mediaType: galleryMediaType,
+        dateAdded: new Date().toISOString()
+      };
+      currentGallery.unshift(newItem);
+    }
+
+    await db.saveGallery(currentGallery);
+    await refreshAllData();
+    setShowAddGalleryModal(false);
+    setEditingGalleryId(null);
+    setGalleryTitle(""); setGalleryCategory(""); setGalleryMediaUrl(""); setGalleryMediaType("image");
+  };
+
+  const handleDeleteGallery = async (id: string) => {
+    if (!confirm("Voulez-vous vraiment supprimer ce média de la galerie ?")) return;
+    const current = gallery.filter(g => g.id !== id);
+    await db.saveGallery(current);
+    await refreshAllData();
+  };
+
+  // 5. Testimonials toggle active
   const handleToggleTestimonial = async (index: number) => {
     const list = [...testimonials];
     list[index].active = !list[index].active;
@@ -556,9 +673,7 @@ export default function AdminPage() {
       <aside className="w-64 h-full bg-[var(--color-primary)] text-white flex flex-col flex-shrink-0 z-20 sticky top-0">
         {/* Brand header */}
         <div className="p-6 border-b border-white/10 flex items-center gap-3">
-          <div className="w-10 h-10 bg-[var(--color-accent)] flex items-center justify-center font-heading font-black text-lg tracking-wider text-white shadow">
-            CF
-          </div>
+          <img src="/logo.jpeg" alt="CFIG Guinée Logo" className="h-10 w-auto object-contain bg-white rounded-sm" />
           <div>
             <h1 className="font-heading font-bold text-sm tracking-wide leading-none">CFIG Guinée</h1>
             <span className="text-[10px] text-gray-400 uppercase tracking-widest font-bold">Dashboard</span>
@@ -573,6 +688,7 @@ export default function AdminPage() {
             { id: "formations", label: "Formations & Modules", icon: <BookOpen className="w-4 h-4" /> },
             { id: "actualites", label: "Blog & Actualités", icon: <FileText className="w-4 h-4" /> },
             { id: "testimonials", label: "Témoignages Alumni", icon: <MessageSquare className="w-4 h-4" /> },
+            { id: "galerie", label: "Galerie Médias", icon: <ImageIcon className="w-4 h-4" /> },
             { id: "messages", label: "Messages de Contact", icon: <Mail className="w-4 h-4" />, badge: unreadMessagesCount },
             { id: "users", label: "Utilisateurs Admin", icon: <Users className="w-4 h-4" /> },
             { id: "settings", label: "Paramètres", icon: <Settings className="w-4 h-4" /> }
@@ -1156,6 +1272,85 @@ export default function AdminPage() {
             )}
 
             {/* ====================================
+                TAB: GALERIE
+            ==================================== */}
+            {activeTab === "galerie" && (
+              <motion.div
+                key="galerie"
+                initial={{ opacity: 0, y: 15 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0 }}
+                className="space-y-6"
+              >
+                <div className="flex justify-between items-center bg-white p-4 border border-gray-200 shadow-sm">
+                  <div>
+                    <h3 className="text-sm font-bold uppercase tracking-wider text-[var(--color-primary)]">Médias de la galerie</h3>
+                    <p className="text-[10px] text-gray-400 mt-1 uppercase tracking-widest">{gallery.length} élément(s)</p>
+                  </div>
+                  <button
+                    onClick={() => {
+                      setEditingGalleryId(null);
+                      setGalleryTitle(""); setGalleryCategory(""); setGalleryMediaUrl(""); setGalleryMediaType("image");
+                      setShowAddGalleryModal(true);
+                    }}
+                    className="px-4 py-2 bg-[var(--color-accent)] text-white text-xs font-bold uppercase tracking-wider flex items-center gap-2 hover:bg-[var(--color-primary)] transition-colors rounded-none"
+                  >
+                    <Plus className="w-4 h-4" /> Ajouter un média
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                  {gallery.map((item) => (
+                    <div key={item.id} className="bg-white border border-gray-200 shadow-sm group">
+                      <div className="relative aspect-video overflow-hidden bg-gray-100">
+                        {item.mediaType === "video" ? (
+                          <video src={item.mediaUrl} className="w-full h-full object-cover" />
+                        ) : (
+                          <img src={item.mediaUrl} alt={item.title} className="w-full h-full object-cover" />
+                        )}
+                        <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <button
+                            onClick={() => {
+                              setEditingGalleryId(item.id);
+                              setGalleryTitle(item.title);
+                              setGalleryCategory(item.category);
+                              setGalleryMediaUrl(item.mediaUrl);
+                              setGalleryMediaType(item.mediaType);
+                              setShowAddGalleryModal(true);
+                            }}
+                            className="p-1.5 bg-white text-blue-600 shadow-md hover:bg-blue-50"
+                          >
+                            <Edit3 className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteGallery(item.id)}
+                            className="p-1.5 bg-white text-red-600 shadow-md hover:bg-red-50"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                        {item.mediaType === "video" && (
+                          <div className="absolute top-2 left-2 bg-black/60 text-white px-2 py-0.5 text-[10px] uppercase font-bold rounded-sm flex items-center gap-1">
+                            <Video className="w-3 h-3" /> Vidéo
+                          </div>
+                        )}
+                      </div>
+                      <div className="p-4">
+                        <span className="text-[9px] uppercase tracking-wider font-bold text-[var(--color-accent)]">{item.category}</span>
+                        <h4 className="text-xs font-bold text-[var(--color-primary)] truncate mt-1">{item.title}</h4>
+                      </div>
+                    </div>
+                  ))}
+                  {gallery.length === 0 && (
+                    <div className="col-span-full py-12 text-center text-gray-500 italic bg-white border border-gray-200">
+                      Aucun média dans la galerie.
+                    </div>
+                  )}
+                </div>
+              </motion.div>
+            )}
+
+            {/* ====================================
                 TAB: CONTACT MESSAGES
             ==================================== */}
             {activeTab === "messages" && (
@@ -1434,139 +1629,327 @@ export default function AdminPage() {
           3. FULL MODALS (CRUD / VIEW DETAILS)
       ================================================ */}
       
-      {/* Modal: Add/Edit Module */}
+      {/* Modal: Add/Edit Module — Multi-Tab */}
       {showAddModuleModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="bg-white p-8 w-full max-w-md border border-gray-200 shadow-2xl text-gray-800 rounded-none"
+            className="bg-white w-full max-w-2xl border border-gray-200 shadow-2xl text-gray-800 rounded-none flex flex-col"
+            style={{ maxHeight: '90vh' }}
           >
-            <div className="flex justify-between items-center mb-6 border-b border-gray-100 pb-3">
-              <h3 className="text-lg font-heading font-bold text-[var(--color-primary)]">
-                {editingModule !== null ? "Modifier le module" : "Ajouter un module"}
+            {/* Modal Header */}
+            <div className="flex justify-between items-center px-6 py-4 border-b border-gray-100 flex-shrink-0">
+              <h3 className="text-base font-heading font-bold text-[var(--color-primary)]">
+                {editingModule !== null ? "Modifier la formation" : "Ajouter une formation"}
               </h3>
-              <button 
+              <button
                 disabled={isSavingModule}
-                onClick={() => {
-                  setShowAddModuleModal(false);
-                  setEditingModule(null);
-                }} 
+                onClick={() => { setShowAddModuleModal(false); setEditingModule(null); resetModuleForm(); }}
                 className="text-gray-400 hover:text-gray-600 disabled:opacity-30"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            <form onSubmit={handleAddOrEditModule} className="space-y-4">
-              <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-1.5">Catégorie *</label>
-                <input
-                  type="text"
-                  required
-                  disabled={isSavingModule}
-                  className="w-full bg-gray-50 border border-gray-300 px-4 py-2 text-xs focus:outline-none focus:border-[var(--color-primary)] rounded-none disabled:opacity-50"
-                  placeholder="Ex: Analyse des Données, Gestion, etc."
-                  value={newModuleCategory}
-                  onChange={(e) => setNewModuleCategory(e.target.value)}
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-1.5">Intitulé du module *</label>
-                <input
-                  type="text"
-                  required
-                  disabled={isSavingModule}
-                  className="w-full bg-gray-50 border border-gray-300 px-4 py-2 text-xs focus:outline-none focus:border-[var(--color-primary)] rounded-none disabled:opacity-50"
-                  placeholder="Ex: Initiation à Excel"
-                  value={newModuleTitle}
-                  onChange={(e) => setNewModuleTitle(e.target.value)}
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-1.5">Outils (séparés par virgules)</label>
-                <input
-                  type="text"
-                  disabled={isSavingModule}
-                  className="w-full bg-gray-50 border border-gray-300 px-4 py-2 text-xs focus:outline-none focus:border-[var(--color-primary)] rounded-none disabled:opacity-50"
-                  placeholder="Ex: Excel, PowerBI, Canva"
-                  value={newModuleOutils}
-                  onChange={(e) => setNewModuleOutils(e.target.value)}
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-1.5">
-                    Prix (GNF) <span className="text-gray-400 normal-case font-normal">— Optionnel</span>
-                  </label>
-                  <input
-                    type="number"
-                    min="0"
-                    step="1000"
-                    disabled={isSavingModule}
-                    className="w-full bg-gray-50 border border-gray-300 px-4 py-2 text-xs focus:outline-none focus:border-[var(--color-primary)] rounded-none disabled:opacity-50"
-                    placeholder="Ex: 500000"
-                    value={newModulePrix}
-                    onChange={(e) => setNewModulePrix(e.target.value === "" ? "" : Number(e.target.value))}
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-1.5">
-                    Image <span className="text-gray-400 normal-case font-normal">— URL optionnelle</span>
-                  </label>
-                  <input
-                    type="url"
-                    disabled={isSavingModule}
-                    className="w-full bg-gray-50 border border-gray-300 px-4 py-2 text-xs focus:outline-none focus:border-[var(--color-primary)] rounded-none disabled:opacity-50"
-                    placeholder="https://..."
-                    value={newModuleImage}
-                    onChange={(e) => setNewModuleImage(e.target.value)}
-                  />
-                </div>
-              </div>
-
-              {/* Image preview */}
-              {newModuleImage && (
-                <div className="border border-gray-200 p-2 bg-gray-50">
-                  <p className="text-[9px] uppercase tracking-wider font-bold text-gray-400 mb-1.5">Aperçu de l'image</p>
-                  <img
-                    src={newModuleImage}
-                    alt="Aperçu"
-                    className="h-28 w-full object-cover border border-gray-200"
-                    onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
-                  />
-                </div>
-              )}
-
-              <div className="pt-4 flex justify-end gap-2 border-t border-gray-100 mt-6">
+            {/* Tab Bar */}
+            <div className="flex border-b border-gray-100 flex-shrink-0 bg-gray-50">
+              {(["Infos Générales", "Fiche Technique", "Pédagogie", "Programme"] as const).map((tab, i) => (
                 <button
+                  key={tab}
                   type="button"
-                  disabled={isSavingModule}
-                  onClick={() => {
-                    setShowAddModuleModal(false);
-                    setEditingModule(null);
-                  }}
-                  className="px-4 py-2 border border-gray-300 text-xs font-bold uppercase tracking-wider hover:bg-gray-50 text-gray-600 rounded-none disabled:opacity-50"
+                  onClick={() => setModalTab((i + 1) as 1|2|3|4)}
+                  className={`flex-1 text-[10px] font-bold uppercase tracking-wider py-3 px-2 border-b-2 transition-colors ${
+                    modalTab === i + 1
+                      ? "border-[var(--color-primary)] text-[var(--color-primary)] bg-white"
+                      : "border-transparent text-gray-400 hover:text-gray-600"
+                  }`}
                 >
-                  Annuler
+                  {i + 1}. {tab}
                 </button>
-                <button
-                  type="submit"
-                  disabled={isSavingModule}
-                  className="px-6 py-2 bg-[var(--color-primary)] text-white text-xs font-bold uppercase tracking-wider hover:bg-[var(--color-accent)] transition-colors rounded-none disabled:opacity-50 flex items-center gap-2"
-                >
-                  {isSavingModule ? (
-                    <>
-                      <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                      {editingModule !== null ? "Enregistrement..." : "Création..."}
-                    </>
-                  ) : (
-                    editingModule !== null ? "Enregistrer" : "Créer"
+              ))}
+            </div>
+
+            {/* Scrollable form body */}
+            <form onSubmit={handleAddOrEditModule} className="flex flex-col flex-1 overflow-hidden">
+              <div className="flex-1 overflow-y-auto px-6 py-5 space-y-4">
+
+                {/* === ONGLET 1: Infos Générales === */}
+                {modalTab === 1 && (
+                  <>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="col-span-2">
+                        <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-1.5">Catégorie *</label>
+                        <input type="text" required disabled={isSavingModule}
+                          className="w-full bg-gray-50 border border-gray-300 px-3 py-2 text-xs focus:outline-none focus:border-[var(--color-primary)] rounded-none disabled:opacity-50"
+                          placeholder="Ex: Analyse des Données, Gestion..."
+                          value={newModuleCategory} onChange={e => setNewModuleCategory(e.target.value)} />
+                      </div>
+                      <div className="col-span-2">
+                        <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-1.5">Intitulé de la formation *</label>
+                        <input type="text" required disabled={isSavingModule}
+                          className="w-full bg-gray-50 border border-gray-300 px-3 py-2 text-xs focus:outline-none focus:border-[var(--color-primary)] rounded-none disabled:opacity-50"
+                          placeholder="Ex: Initiation à Excel"
+                          value={newModuleTitle} onChange={e => setNewModuleTitle(e.target.value)} />
+                      </div>
+                      <div className="col-span-2">
+                        <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-1.5">Outils <span className="normal-case text-gray-400 font-normal">(séparés par virgules)</span></label>
+                        <input type="text" disabled={isSavingModule}
+                          className="w-full bg-gray-50 border border-gray-300 px-3 py-2 text-xs focus:outline-none focus:border-[var(--color-primary)] rounded-none disabled:opacity-50"
+                          placeholder="Ex: Excel, PowerBI, Canva"
+                          value={newModuleOutils} onChange={e => setNewModuleOutils(e.target.value)} />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-1.5">Statut des inscriptions</label>
+                        <select disabled={isSavingModule}
+                          className="w-full bg-gray-50 border border-gray-300 px-3 py-2 text-xs focus:outline-none focus:border-[var(--color-primary)] rounded-none disabled:opacity-50"
+                          value={newModuleStatutInscription} onChange={e => setNewModuleStatutInscription(e.target.value as "Ouverte" | "Fermée")}>
+                          <option value="Ouverte">Ouverte</option>
+                          <option value="Fermée">Fermée</option>
+                        </select>
+                      </div>
+                      <div className="col-span-2">
+                        <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-1.5">Image de la formation</label>
+                        <MediaUploader
+                          accept="image"
+                          value={newModuleImage}
+                          onChange={(url) => setNewModuleImage(url)}
+                          label="Uploader une image"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="border border-gray-100 bg-gray-50 p-4 space-y-3">
+                      <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 border-b border-gray-200 pb-2">Tarification</p>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-1.5">Prix formation (GNF)</label>
+                          <input type="number" min="0" step="1000" disabled={isSavingModule}
+                            className="w-full bg-white border border-gray-300 px-3 py-2 text-xs focus:outline-none focus:border-[var(--color-primary)] rounded-none disabled:opacity-50"
+                            placeholder="Ex: 2 000 000" value={newModulePrix}
+                            onChange={e => setNewModulePrix(e.target.value === "" ? "" : Number(e.target.value))} />
+                          <p className="text-[9px] text-gray-400 mt-1">Coût total de la formation</p>
+                        </div>
+                        <div>
+                          <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-1.5">Frais d'inscription (GNF)</label>
+                          <input type="number" min="0" step="1000" disabled={isSavingModule}
+                            className="w-full bg-white border border-gray-300 px-3 py-2 text-xs focus:outline-none focus:border-[var(--color-primary)] rounded-none disabled:opacity-50"
+                            placeholder="Ex: 100 000" value={newModulePrixInscription}
+                            onChange={e => setNewModulePrixInscription(e.target.value === "" ? "" : Number(e.target.value))} />
+                          <p className="text-[9px] text-gray-400 mt-1">Frais d'enrôlement seulement</p>
+                        </div>
+                      </div>
+                      <div>
+                        <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-1.5">Méthode de paiement</label>
+                        <select disabled={isSavingModule}
+                          className="w-full bg-white border border-gray-300 px-3 py-2 text-xs focus:outline-none focus:border-[var(--color-primary)] rounded-none disabled:opacity-50 cursor-pointer"
+                          value={newModuleMethodePaiement} onChange={e => setNewModuleMethodePaiement(e.target.value)}>
+                          <option value="">— Sélectionner —</option>
+                          <option value="Paiement comptant">Paiement comptant (intégral)</option>
+                          <option value="En 2 tranches">En 2 tranches</option>
+                          <option value="En 3 tranches">En 3 tranches</option>
+                          <option value="En 4 tranches">En 4 tranches</option>
+                          <option value="À négocier">À négocier</option>
+                        </select>
+                      </div>
+                    </div>
+                  </>
+                )}
+
+                {/* === ONGLET 2: Fiche Technique === */}
+                {modalTab === 2 && (
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-1.5">Durée</label>
+                        <input type="text" disabled={isSavingModule}
+                          className="w-full bg-gray-50 border border-gray-300 px-3 py-2 text-xs focus:outline-none focus:border-[var(--color-primary)] rounded-none disabled:opacity-50"
+                          placeholder="Ex: 2 mois / 80h"
+                          value={newModuleDuree} onChange={e => setNewModuleDuree(e.target.value)} />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-1.5">Date de début</label>
+                        <input type="text" disabled={isSavingModule}
+                          className="w-full bg-gray-50 border border-gray-300 px-3 py-2 text-xs focus:outline-none focus:border-[var(--color-primary)] rounded-none disabled:opacity-50"
+                          placeholder="Ex: 15 Juillet 2026"
+                          value={newModuleDateDebut} onChange={e => setNewModuleDateDebut(e.target.value)} />
+                      </div>
+                      <div className="col-span-2 mt-2 border-t border-gray-100 pt-3">
+                        <label className="block text-xs font-bold uppercase tracking-wider text-[var(--color-primary)] mb-3">
+                          Planning hebdomadaire (Jours et Horaires)
+                        </label>
+                        <div className="space-y-2.5">
+                          {["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"].map((jour) => {
+                            const planningItem = newModulePlanning.find(p => p.jour === jour);
+                            const isChecked = !!planningItem;
+                            return (
+                              <div key={jour} className="flex items-center gap-4 py-1.5 border-b border-gray-50 last:border-b-0">
+                                <label className="flex items-center gap-2 text-xs font-semibold text-gray-700 w-24 cursor-pointer select-none">
+                                  <input
+                                    type="checkbox"
+                                    disabled={isSavingModule}
+                                    className="w-3.5 h-3.5 border-gray-300 text-[var(--color-primary)] focus:ring-[var(--color-primary)] cursor-pointer"
+                                    checked={isChecked}
+                                    onChange={(e) => {
+                                      if (e.target.checked) {
+                                        setNewModulePlanning([...newModulePlanning, { jour, horaire: "18h00 - 20h00" }]);
+                                      } else {
+                                        setNewModulePlanning(newModulePlanning.filter(p => p.jour !== jour));
+                                      }
+                                    }}
+                                  />
+                                  {jour}
+                                </label>
+                                {isChecked && (
+                                  <input
+                                    type="text"
+                                    disabled={isSavingModule}
+                                    required
+                                    className="flex-1 bg-white border border-gray-300 px-3 py-1.5 text-xs focus:outline-none focus:border-[var(--color-primary)] rounded-none"
+                                    placeholder="Ex: 18h00 - 20h00, 9h00 - 12h00"
+                                    value={planningItem.horaire}
+                                    onChange={(e) => {
+                                      setNewModulePlanning(
+                                        newModulePlanning.map(p => p.jour === jour ? { ...p, horaire: e.target.value } : p)
+                                      );
+                                    }}
+                                  />
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* === ONGLET 3: Pédagogie === */}
+                {modalTab === 3 && (
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-1.5">Présentation <span className="text-gray-400 normal-case font-normal">(optionnel)</span></label>
+                      <textarea rows={4} disabled={isSavingModule}
+                        className="w-full bg-gray-50 border border-gray-300 px-3 py-2 text-xs focus:outline-none focus:border-[var(--color-primary)] rounded-none disabled:opacity-50 resize-none"
+                        placeholder="Décrivez la formation en quelques lignes..."
+                        value={newModulePresentation} onChange={e => setNewModulePresentation(e.target.value)} />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-1.5">Objectifs pédagogiques <span className="text-gray-400 normal-case font-normal">(1 par ligne)</span></label>
+                      <textarea rows={4} disabled={isSavingModule}
+                        className="w-full bg-gray-50 border border-gray-300 px-3 py-2 text-xs focus:outline-none focus:border-[var(--color-primary)] rounded-none disabled:opacity-50 resize-none"
+                        placeholder="Maîtriser les fondamentaux de Excel\nCréer des tableaux croisés dynamiques\n..."
+                        value={newModuleObjectifs} onChange={e => setNewModuleObjectifs(e.target.value)} />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-1.5">Prérequis <span className="text-gray-400 normal-case font-normal">(1 par ligne)</span></label>
+                      <textarea rows={3} disabled={isSavingModule}
+                        className="w-full bg-gray-50 border border-gray-300 px-3 py-2 text-xs focus:outline-none focus:border-[var(--color-primary)] rounded-none disabled:opacity-50 resize-none"
+                        placeholder="Avoir un ordinateur\nSavoir utiliser une souris\n..."
+                        value={newModulePrerequis} onChange={e => setNewModulePrerequis(e.target.value)} />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-1.5">Public cible <span className="text-gray-400 normal-case font-normal">(1 par ligne)</span></label>
+                      <textarea rows={3} disabled={isSavingModule}
+                        className="w-full bg-gray-50 border border-gray-300 px-3 py-2 text-xs focus:outline-none focus:border-[var(--color-primary)] rounded-none disabled:opacity-50 resize-none"
+                        placeholder="Étudiants\nProfessionnels en reconversion\n..."
+                        value={newModulePublicCible} onChange={e => setNewModulePublicCible(e.target.value)} />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-1.5">Débouchés professionnels / Emplois cibles <span className="text-gray-400 normal-case font-normal">(1 par ligne, optionnel)</span></label>
+                      <textarea rows={3} disabled={isSavingModule}
+                        className="w-full bg-gray-50 border border-gray-300 px-3 py-2 text-xs focus:outline-none focus:border-[var(--color-primary)] rounded-none disabled:opacity-50 resize-none"
+                        placeholder="Comptable agréé\nAnalyste financier\nConsultant en gestion\n..."
+                        value={newModuleDebouches} onChange={e => setNewModuleDebouches(e.target.value)} />
+                    </div>
+                  </div>
+                )}
+
+                {/* === ONGLET 4: Programme Détaillé === */}
+                {modalTab === 4 && (
+                  <div className="space-y-4">
+                    <p className="text-[10px] text-gray-400">Ajoutez chaque module du programme. Les points de contenu sont séparés par des retours à la ligne.</p>
+                    {newModuleProgramme.map((chapter, i) => (
+                      <div key={i} className="border border-gray-200 p-4 bg-gray-50 space-y-2">
+                        <div className="flex items-center gap-2">
+                          <span className="text-[10px] font-bold bg-[var(--color-primary)] text-white px-2 py-0.5">Module {i + 1}</span>
+                          {newModuleProgramme.length > 1 && (
+                            <button type="button" onClick={() => {
+                              const arr = [...newModuleProgramme];
+                              arr.splice(i, 1);
+                              setNewModuleProgramme(arr);
+                            }} className="ml-auto text-red-400 hover:text-red-600 text-[10px] font-bold">
+                              ✕ Supprimer
+                            </button>
+                          )}
+                        </div>
+                        <input type="text" disabled={isSavingModule}
+                          className="w-full bg-white border border-gray-300 px-3 py-2 text-xs focus:outline-none focus:border-[var(--color-primary)] rounded-none disabled:opacity-50"
+                          placeholder="Titre du module (ex: Introduction à PowerBI)"
+                          value={chapter.title}
+                          onChange={e => {
+                            const arr = [...newModuleProgramme];
+                            arr[i] = { ...arr[i], title: e.target.value };
+                            setNewModuleProgramme(arr);
+                          }} />
+                        <textarea rows={3} disabled={isSavingModule}
+                          className="w-full bg-white border border-gray-300 px-3 py-2 text-xs focus:outline-none focus:border-[var(--color-primary)] rounded-none disabled:opacity-50 resize-none"
+                          placeholder="Contenu du module (1 point par ligne)..."
+                          value={chapter.points}
+                          onChange={e => {
+                            const arr = [...newModuleProgramme];
+                            arr[i] = { ...arr[i], points: e.target.value };
+                            setNewModuleProgramme(arr);
+                          }} />
+                      </div>
+                    ))}
+                    <button type="button"
+                      onClick={() => setNewModuleProgramme([...newModuleProgramme, { title: "", points: "" }])}
+                      className="w-full border-2 border-dashed border-gray-300 py-2.5 text-xs font-bold text-gray-400 hover:border-[var(--color-accent)] hover:text-[var(--color-accent)] transition-colors">
+                      + Ajouter un module
+                    </button>
+                  </div>
+                )}
+
+              </div>
+
+              {/* Sticky Footer — buttons always visible */}
+              <div className="flex-shrink-0 px-6 py-4 border-t border-gray-100 bg-white flex items-center justify-between">
+                <div className="flex gap-1">
+                  {([1,2,3,4] as const).map(n => (
+                    <button key={n} type="button" onClick={() => setModalTab(n)}
+                      className={`w-6 h-1.5 rounded-full transition-colors ${ modalTab === n ? "bg-[var(--color-primary)]" : "bg-gray-200 hover:bg-gray-300" }`}
+                    />
+                  ))}
+                </div>
+                <div className="flex gap-2">
+                  {modalTab > 1 && (
+                    <button type="button" onClick={() => setModalTab((modalTab - 1) as 1|2|3|4)}
+                      className="px-4 py-2 border border-gray-300 text-xs font-bold uppercase tracking-wider hover:bg-gray-50 text-gray-600 rounded-none">
+                      ← Précédent
+                    </button>
                   )}
-                </button>
+                  {modalTab < 4 ? (
+                    <button type="button" onClick={() => setModalTab((modalTab + 1) as 1|2|3|4)}
+                      className="px-4 py-2 bg-[var(--color-accent)] text-white text-xs font-bold uppercase tracking-wider hover:bg-[var(--color-primary)] transition-colors rounded-none">
+                      Suivant →
+                    </button>
+                  ) : (
+                    <button type="submit" disabled={isSavingModule}
+                      className="px-6 py-2 bg-[var(--color-primary)] text-white text-xs font-bold uppercase tracking-wider hover:bg-[var(--color-accent)] transition-colors rounded-none disabled:opacity-50 flex items-center gap-2">
+                      {isSavingModule ? (
+                        <><div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></div> Enregistrement...</>
+                      ) : (
+                        editingModule !== null ? " Enregistrer" : "✓ Créer la formation"
+                      )}
+                    </button>
+                  )}
+                  <button type="button" disabled={isSavingModule}
+                    onClick={() => { setShowAddModuleModal(false); setEditingModule(null); resetModuleForm(); }}
+                    className="px-4 py-2 border border-gray-300 text-xs font-bold uppercase tracking-wider hover:bg-gray-50 text-gray-500 rounded-none disabled:opacity-50">
+                    Annuler
+                  </button>
+                </div>
               </div>
             </form>
           </motion.div>
@@ -1631,16 +2014,12 @@ export default function AdminPage() {
 
               <div>
                 <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-1.5">Image de couverture</label>
-                <select
-                  className="w-full bg-gray-50 border border-gray-300 px-4 py-2 text-xs focus:outline-none focus:border-[var(--color-primary)] rounded-none"
+                <MediaUploader
+                  accept="image"
                   value={articleImage}
-                  onChange={(e) => setArticleImage(e.target.value)}
-                >
-                  <option value="/images/news_hero.png">Actualités (news_hero.png)</option>
-                  <option value="/images/about.png">À propos (about.png)</option>
-                  <option value="/images/hero.png">Formation (hero.png)</option>
-                  <option value="/images/gallery.png">Galerie (gallery.png)</option>
-                </select>
+                  onChange={(url) => setArticleImage(url)}
+                  label="Uploader une image de couverture"
+                />
               </div>
 
               <div>
@@ -1683,6 +2062,72 @@ export default function AdminPage() {
                   className="px-6 py-2 bg-[var(--color-primary)] text-white text-xs font-bold uppercase tracking-wider hover:bg-[var(--color-accent)] transition-colors rounded-none"
                 >
                   {editingArticleId !== null ? "Enregistrer" : "Publier"}
+                </button>
+              </div>
+            </form>
+          </motion.div>
+        </div>
+      )}
+
+      {/* Modal: Add/Edit Gallery Media */}
+      {showAddGalleryModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="bg-white p-8 w-full max-w-lg border border-gray-200 shadow-2xl text-gray-800 rounded-none"
+          >
+            <div className="flex justify-between items-center mb-6 border-b border-gray-100 pb-3">
+              <h3 className="text-lg font-heading font-bold text-[var(--color-primary)]">
+                {editingGalleryId !== null ? "Modifier le média" : "Ajouter un média"}
+              </h3>
+              <button onClick={() => setShowAddGalleryModal(false)} className="text-gray-400 hover:text-gray-600">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleAddOrEditGallery} className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-1.5">Titre *</label>
+                <input
+                  type="text" required
+                  className="w-full bg-gray-50 border border-gray-300 px-4 py-2 text-xs focus:outline-none focus:border-[var(--color-primary)] rounded-none"
+                  placeholder="Ex: Remise des diplômes 2024"
+                  value={galleryTitle} onChange={(e) => setGalleryTitle(e.target.value)}
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-1.5">Catégorie *</label>
+                <input
+                  type="text" required
+                  className="w-full bg-gray-50 border border-gray-300 px-4 py-2 text-xs focus:outline-none focus:border-[var(--color-primary)] rounded-none"
+                  placeholder="Ex: Événements, Formations..."
+                  value={galleryCategory} onChange={(e) => setGalleryCategory(e.target.value)}
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-1.5">Média (Image ou Vidéo) *</label>
+                <MediaUploader
+                  accept="both"
+                  value={galleryMediaUrl}
+                  onChange={(url, type) => {
+                    setGalleryMediaUrl(url);
+                    setGalleryMediaType(type);
+                  }}
+                  label="Uploader le média"
+                />
+              </div>
+
+              <div className="pt-4 flex justify-end gap-2 border-t border-gray-100 mt-6">
+                <button type="button" onClick={() => setShowAddGalleryModal(false)}
+                  className="px-4 py-2 border border-gray-300 text-xs font-bold uppercase tracking-wider hover:bg-gray-50 text-gray-600 rounded-none">
+                  Annuler
+                </button>
+                <button type="submit"
+                  className="px-6 py-2 bg-[var(--color-primary)] text-white text-xs font-bold uppercase tracking-wider hover:bg-[var(--color-accent)] transition-colors rounded-none">
+                  Enregistrer
                 </button>
               </div>
             </form>

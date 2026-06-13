@@ -167,25 +167,62 @@ export default function AboutPage() {
       </section>
 
       {/* Team Section */}
-      <section className="py-20 bg-[var(--color-primary)] text-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <SectionTitle title="Notre Équipe d'Experts" subtitle="Des professionnels qualifiés et passionnés" centered className="text-white" />
-          
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 mt-12">
+      <section className="py-24 bg-[#f5f7fa]">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl md:text-5xl font-heading font-bold text-[var(--color-primary)] mb-3">Notre équipe</h2>
+            <div className="w-16 h-1 bg-gradient-to-r from-[var(--color-secondary)] to-[var(--color-accent)] mx-auto mt-4 rounded-full" />
+          </div>
+
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-10">
             {teamData.map((member, index) => (
               <motion.div
                 key={index}
-                initial={{ opacity: 0, scale: 0.9 }}
-                whileInView={{ opacity: 1, scale: 1 }}
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: index * 0.1 }}
-                className="bg-white/10 backdrop-blur-sm rounded-xl p-6 text-center border border-white/20 hover:bg-white/20 transition-colors"
+                className="flex flex-col items-center text-center group"
               >
-                <div className="w-24 h-24 mx-auto bg-[var(--color-accent)] rounded-full flex items-center justify-center text-3xl font-bold mb-4 shadow-lg">
-                  {member.initials}
+                {/* Gradient ring around photo */}
+                <div className="relative mb-5">
+                  {/* Outer gradient border */}
+                  <div
+                    className="w-40 h-40 rounded-full p-[3px] shadow-lg"
+                    style={{
+                      background: "linear-gradient(135deg, #1A3A6E 0%, #8B0000 50%, #1A3A6E 100%)"
+                    }}
+                  >
+                    <div className="w-full h-full rounded-full overflow-hidden bg-white">
+                      <img
+                        src={member.image}
+                        alt={member.name}
+                        className="w-full h-full object-cover object-top grayscale group-hover:grayscale-0 transition-all duration-500"
+                      />
+                    </div>
+                  </div>
                 </div>
-                <h3 className="text-xl font-bold mb-1">{member.name}</h3>
-                <p className="text-sm text-[var(--color-accent)]">{member.role}</p>
+
+                {/* Info */}
+                <h3 className="text-lg font-heading font-bold text-[var(--color-primary)] leading-tight mb-1">
+                  {member.name}
+                </h3>
+                <p className="text-xs text-gray-500 font-medium mb-4 max-w-[140px] leading-relaxed">
+                  {member.role}
+                </p>
+
+                {/* LinkedIn */}
+                <a
+                  href={member.linkedin}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label={`LinkedIn de ${member.name}`}
+                  className="flex items-center justify-center w-8 h-8 rounded-sm bg-[#0077B5] hover:bg-[#005f91] transition-colors shadow-sm"
+                >
+                  <svg className="w-4 h-4 text-white fill-current" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 0 1-2.063-2.065 2.064 2.064 0 1 1 2.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
+                  </svg>
+                </a>
               </motion.div>
             ))}
           </div>

@@ -16,7 +16,7 @@
   --color-surface:     #F5F7FA;
 
   --font-sans:    var(--font-dm-sans), ui-sans-serif, system-ui, sans-serif;
-  --font-heading: var(--font-playfair), ui-serif, Georgia, serif;
+  --font-heading: var(--font-dm-sans), ui-sans-serif, system-ui, sans-serif; /* changed from serif to sans as requested */
   --font-mono:    var(--font-space), ui-monospace, SFMono-Regular, monospace;
 }
 

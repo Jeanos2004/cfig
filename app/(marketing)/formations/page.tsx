@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
-import { ChevronRight, ArrowRight, BookOpen, Layers, CheckCircle2 } from "lucide-react";
+import { ChevronRight, ArrowRight, BookOpen, Layers, CheckCircle2, CreditCard } from "lucide-react";
 import { db } from "@/lib/db";
 
 const generateSlug = (text: string) => {
@@ -145,18 +145,48 @@ export default function FormationsPage() {
 
                       <div className="h-px w-full bg-gray-100 mb-4" />
 
-                      {/* Tools + Price row */}
-                      <div className="mb-5">
-                        <div className="flex items-center justify-between mb-2">
-                          <div className="flex items-center gap-1.5 text-xs font-bold text-gray-600">
-                            <Layers className="w-3.5 h-3.5 text-gray-400" />
-                            Outils :
+                      {/* Prix + Méthode de paiement */}
+                      {(formation.prix !== undefined || formation.prixInscription !== undefined || formation.methodePaiement) && (
+                        <div className="mb-4 p-3 bg-gray-50 border border-gray-100 flex flex-col gap-2">
+                          <div className="flex justify-between items-start">
+                            <div className="flex flex-col gap-1.5">
+                              {formation.prix !== undefined && (
+                                <div>
+                                  <span className="text-[9px] uppercase tracking-wider text-gray-500 font-bold block mb-0.5">Formation</span>
+                                  <div className="text-base font-black text-[#8B0000] leading-none">
+                                    {formation.prix.toLocaleString('fr-GN')} <span className="text-[10px] font-bold tracking-wider">GNF</span>
+                                  </div>
+                                </div>
+                              )}
+                              {formation.prixInscription !== undefined && (
+                                <div>
+                                  <span className="text-[9px] uppercase tracking-wider text-gray-500 font-bold block mb-0.5">Inscription</span>
+                                  <div className="text-sm font-bold text-gray-800 leading-none">
+                                    {formation.prixInscription.toLocaleString('fr-GN')} <span className="text-[9px] font-bold tracking-wider">GNF</span>
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                            {(formation.prix !== undefined || formation.prixInscription !== undefined) && (
+                              <span className="text-[9px] font-bold bg-[#8B0000] text-white px-2 py-1 uppercase tracking-wider shrink-0 mt-1">
+                                Tarifs
+                              </span>
+                            )}
                           </div>
-                          {formation.prix !== undefined && (
-                            <span className="text-xs font-black text-[var(--color-accent)] bg-orange-50 border border-orange-200 px-2 py-0.5">
-                              {formation.prix.toLocaleString('fr-GN')} GNF
-                            </span>
+                          {formation.methodePaiement && (
+                            <div className="flex items-center gap-1 mt-1 border-t border-gray-200 pt-2">
+                              <CreditCard className="w-3 h-3 text-gray-400" />
+                              <span className="text-[10px] text-gray-500 font-medium">Paiement : {formation.methodePaiement}</span>
+                            </div>
                           )}
+                        </div>
+                      )}
+
+                      {/* Tools */}
+                      <div className="mb-5 flex-grow">
+                        <div className="flex items-center gap-1.5 text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">
+                          <Layers className="w-3.5 h-3.5 text-gray-400" />
+                          Outils
                         </div>
                         {formation.outils && formation.outils.length > 0 ? (
                           <div className="flex flex-wrap gap-1.5">
@@ -178,15 +208,23 @@ export default function FormationsPage() {
                       </div>
 
                       {/* CTA */}
-                      <Link
-                        href={`/formations/${formation.slug}`}
-                        className="mt-auto inline-flex items-center justify-between w-full px-5 py-3 bg-[var(--color-primary)] hover:bg-[var(--color-accent)] text-white font-sans font-bold text-xs uppercase tracking-wider transition-colors"
-                      >
-                        <span>Voir les détails</span>
-                        <ArrowRight className="w-4 h-4" />
-                      </Link>
+                      <div className="pt-4 border-t border-gray-100 flex items-center justify-between mt-auto">
+                        <Link
+                          href={`/formations/${formation.slug}`}
+                          className="text-[11px] font-bold uppercase tracking-widest text-[var(--color-primary)] hover:text-[#8B0000] transition-colors flex items-center gap-1"
+                        >
+                          En savoir plus <ArrowRight className="w-3 h-3" />
+                        </Link>
+                        <Link
+                          href="/inscription"
+                          className="bg-[var(--color-primary)] hover:bg-[#8B0000] text-white font-bold text-[9px] uppercase tracking-widest px-4 py-2.5 transition-colors"
+                        >
+                          S'inscrire
+                        </Link>
+                      </div>
                     </div>
                   </motion.div>
+
                 );
               })}
             </AnimatePresence>

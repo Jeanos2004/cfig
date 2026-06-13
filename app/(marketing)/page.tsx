@@ -488,10 +488,16 @@ export default function Home() {
                 transition={{ delay: index * 0.1 }}
                 className="bg-white/5 border border-white/10 p-8 hover:border-[var(--color-accent)] transition-colors"
               >
-                {/* Quote mark */}
-                <div className="text-[var(--color-accent)] text-5xl font-heading leading-none mb-4 select-none">
-                  "
-                </div>
+                {/* Video if exists */}
+                {testimonial.videoUrl ? (
+                  <div className="mb-6 rounded-sm overflow-hidden bg-black/20 aspect-video relative">
+                    <video src={testimonial.videoUrl} controls preload="metadata" className="w-full h-full object-cover" />
+                  </div>
+                ) : (
+                  <div className="text-[var(--color-accent)] text-5xl font-heading leading-none mb-4 select-none">
+                    "
+                  </div>
+                )}
 
                 {/* Stars */}
                 <div className="flex mb-4">
@@ -512,9 +518,13 @@ export default function Home() {
                 </p>
 
                 <div className="flex items-center pt-4 border-t border-white/10">
-                  <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm mr-3 ${testimonial.color}`}>
-                    {testimonial.initials}
-                  </div>
+                  {testimonial.image ? (
+                    <img src={testimonial.image} alt={testimonial.name} className="w-10 h-10 rounded-full object-cover mr-3 bg-white/10" />
+                  ) : (
+                    <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm mr-3 ${testimonial.color}`}>
+                      {testimonial.initials}
+                    </div>
+                  )}
                   <div>
                     <div className="font-bold text-white text-sm">{testimonial.name}</div>
                     <div className="text-white/50 text-xs">{testimonial.role}</div>

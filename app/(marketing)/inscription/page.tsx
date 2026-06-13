@@ -258,13 +258,13 @@ export default function InscriptionPage() {
           <div className="mt-8 text-center bg-green-50 p-6 rounded-xl border border-green-100 flex flex-col sm:flex-row items-center justify-center">
             <span className="text-gray-700 mb-3 sm:mb-0 sm:mr-4 font-medium">Ou contactez-nous directement sur WhatsApp</span>
             <a 
-              href="https://wa.me/224622886773" 
+              href="https://wa.me/224626625162" 
               target="_blank" 
               rel="noopener noreferrer"
               className="inline-flex items-center px-4 py-2 bg-[#25D366] text-white rounded-md font-medium hover:bg-green-600 transition-colors shadow-sm"
             >
               <MessageCircle className="w-5 h-5 mr-2" />
-              +224 622 88 67 73
+              +224 626 62 51 62
             </a>
           </div>
         </div>

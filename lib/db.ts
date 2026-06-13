@@ -11,15 +11,37 @@ import {
 
 // === TYPES ===
 
+export interface FormationDetails {
+  presentation?: string;          // Description libre de la formation
+  objectifs?: string[];           // Objectifs pédagogiques (liste)
+  prerequis?: string[];           // Prérequis (liste)
+  publicCible?: string[];         // À qui s'adresse la formation (liste)
+  programme?: {                   // Programme détaillé (modules/chapitres)
+    title: string;
+    points: string[];
+  }[];
+  duree?: string;                 // Ex: "2 mois", "80 heures"
+  dateDebut?: string;             // Ex: "15 Juillet 2026"
+  calendrier?: string;            // Ex: "Lundi, Mercredi, Vendredi"
+  horaires?: string;              // Ex: "18h00 – 20h00"
+  statutInscription?: "Ouverte" | "Fermée"; // Contrôle le bouton d'inscription
+  debouches?: string[];           // Les emplois/opportunités professionnelles (liste)
+  planning?: { jour: string; horaire: string }[]; // Jours et horaires de la formation
+}
+
 export interface ModuleItem {
   titre: string;
   outils: string[];
-  prix?: number;
+  prix?: number;           // Prix de la formation (coût total)
+  prixInscription?: number; // Frais d'inscription séparés
+  methodePaiement?: string;
   image?: string;
+  details?: FormationDetails;     // Toutes les infos détaillées
 }
 
 export interface CategorieFormations {
   categorie: string;
+  image?: string;
   modules: ModuleItem[];
 }
 
@@ -65,6 +87,17 @@ export interface Testimonial {
   text: string;
   rating: number;
   active: boolean;
+  image?: string; // Optional Cloudinary Image URL
+  videoUrl?: string; // Optional Cloudinary Video URL
+}
+
+export interface GalleryItem {
+  id: string;
+  title: string;
+  category: string;
+  mediaUrl: string;
+  mediaType: "image" | "video";
+  dateAdded: string;
 }
 
 export interface SiteSettings {
@@ -393,6 +426,27 @@ export const db = {
       }
     } catch (error) {
       console.error("Error syncing admin in Firestore:", error);
+    }
+  },
+  // Gallery
+  async getGallery(): Promise<GalleryItem[]> {
+    try {
+      const docRef = doc(firestore, "gallery", "all");
+      const docSnap = await getDoc(docRef);
+      if (docSnap.exists()) {
+        return docSnap.data().items as GalleryItem[];
+      }
+    } catch (error) {
+      console.error("Error fetching gallery from Firestore:", error);
+    }
+    return [];
+  },
+  async saveGallery(items: GalleryItem[]): Promise<void> {
+    try {
+      await setDoc(doc(firestore, "gallery", "all"), { items });
+    } catch (error) {
+      console.error("Error saving gallery to Firestore:", error);
+      throw error;
     }
   },
 

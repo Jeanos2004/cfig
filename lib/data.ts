@@ -104,10 +104,34 @@ export const testimonialsData = [
 ];
 
 export const teamData = [
-  { name: "Ousmane Condé", role: "Directeur & Formateur Gestion", initials: "OC" },
-  { name: "Aissatou Sylla", role: "Formatrice Communication", initials: "AS" },
-  { name: "Ibrahima Keita", role: "Expert Logistique", initials: "IK" },
-  { name: "Mariam Sow", role: "Consultante RH", initials: "MS" }
+  {
+    name: "Ousmane Condé",
+    role: "Directeur & Formateur Gestion",
+    initials: "OC",
+    image: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop&crop=face",
+    linkedin: "#"
+  },
+  {
+    name: "Aissatou Sylla",
+    role: "Formatrice Communication",
+    initials: "AS",
+    image: "https://images.unsplash.com/photo-1531123897727-8f129e1688ce?w=400&h=400&fit=crop&crop=face",
+    linkedin: "#"
+  },
+  {
+    name: "Ibrahima Keita",
+    role: "Expert Logistique",
+    initials: "IK",
+    image: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400&h=400&fit=crop&crop=face",
+    linkedin: "#"
+  },
+  {
+    name: "Mariam Sow",
+    role: "Consultante RH",
+    initials: "MS",
+    image: "https://images.unsplash.com/photo-1488426862026-3ee34a7d66df?w=400&h=400&fit=crop&crop=face",
+    linkedin: "#"
+  }
 ];
 
 export const servicesData = [

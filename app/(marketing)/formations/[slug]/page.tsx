@@ -17,7 +17,8 @@ import {
   MessageCircle, 
   Send,
   Users,
-  Calendar
+  Calendar,
+  Briefcase
 } from "lucide-react";
 import { db } from "@/lib/db";
 
@@ -27,7 +28,8 @@ interface ModuleDetail {
   duration: string;
   level: string;
   audience: string[];
-  prerequisites: string;
+  prerequisites?: string;
+  prerequis?: string[];
   objectives: string[];
   syllabus: { title: string; points: string[] }[];
 }
@@ -391,12 +393,29 @@ export default function FormationDetailPage() {
     );
   }
 
-  // Get details
-  const details = moduleDetailsRegistry[slug] || generateFallbackDetails(activeModule.titre, activeCategory, activeModule.outils);
+  // Get details — dynamic from admin, with fallbacks
+  const d = activeModule.details;
+  const fallback = moduleDetailsRegistry[slug] || generateFallbackDetails(activeModule.titre, activeCategory, activeModule.outils);
+
+  const details = {
+    description: d?.presentation || fallback.description,
+    duration: d?.duree || fallback.duration,
+    dateDebut: d?.dateDebut || null,
+    calendrier: d?.calendrier || null,
+    horaires: d?.horaires || null,
+    level: fallback.level,
+    statutInscription: d?.statutInscription || "Ouverte",
+    objectives: d?.objectifs || fallback.objectives,
+    prerequis: d?.prerequis || (fallback.prerequis || [fallback.prerequisites]),
+    publicCible: d?.publicCible || fallback.audience,
+    syllabus: d?.programme || fallback.syllabus,
+    debouches: d?.debouches || [],
+    planning: d?.planning || null,
+  };
 
   // Prefilled links
   const inscriptionUrl = `/inscription?domain=${encodeURIComponent(activeCategory)}&module=${encodeURIComponent(activeModule.titre)}`;
-  const whatsappUrl = `https://wa.me/224622886773?text=${encodeURIComponent(
+  const whatsappUrl = `https://wa.me/224626625162?text=${encodeURIComponent(
     `Bonjour CFIG Guinée, je souhaiterais obtenir des informations concernant la formation : "${activeModule.titre}" (Catégorie : ${activeCategory}).`
   )}`;
 
@@ -493,7 +512,7 @@ export default function FormationDetailPage() {
                 </h2>
                 <p className="text-xs text-gray-400 uppercase tracking-wider mb-5">À l'issue de cette formation, l'apprenant sera en mesure de :</p>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {details.objectives.map((obj, index) => (
+                  {details.objectives.map((obj: string, index: number) => (
                     <div key={index} className="flex items-start gap-2.5">
                       <CheckCircle2 className="w-5 h-5 text-emerald-500 flex-shrink-0 mt-0.5" />
                       <span className="text-gray-700 text-sm font-sans leading-relaxed">{obj}</span>
@@ -510,7 +529,7 @@ export default function FormationDetailPage() {
                 </h2>
                 
                 <div className="space-y-6">
-                  {details.syllabus.map((chapter, cIndex) => (
+                  {details.syllabus.map((chapter: { title: string; points: string[] }, cIndex: number) => (
                     <div key={cIndex} className="border border-gray-150 p-5 bg-gray-50 hover:bg-white transition-colors duration-200">
                       <h3 className="font-heading font-bold text-sm text-[var(--color-primary)] mb-3 flex items-center gap-3">
                         <span className="w-6 h-6 rounded-none bg-[var(--color-accent)] text-white text-[10px] font-mono font-bold flex items-center justify-center">
@@ -519,7 +538,7 @@ export default function FormationDetailPage() {
                         {chapter.title}
                       </h3>
                       <ul className="space-y-2 pl-9">
-                        {chapter.points.map((point, pIndex) => (
+                        {chapter.points.map((point: string, pIndex: number) => (
                           <li key={pIndex} className="text-gray-600 text-xs font-sans list-disc marker:text-[var(--color-accent)] leading-relaxed">
                             {point}
                           </li>
@@ -536,56 +555,129 @@ export default function FormationDetailPage() {
             <div className="space-y-6 lg:sticky lg:top-28">
               
               {/* Technical features Card */}
-              <div className="bg-white border border-gray-200 p-6 shadow-sm">
-                <h3 className="text-sm font-bold uppercase tracking-wider text-[var(--color-primary)] mb-5 border-b border-gray-100 pb-3">Fiche technique</h3>
-                
-                <div className="space-y-4 mb-8">
-                  <div className="flex items-center justify-between text-xs py-2 border-b border-gray-50">
-                    <span className="text-gray-400 font-medium">Durée</span>
-                    <span className="font-bold text-[var(--color-primary)]">{details.duration.split(" (")[0]}</span>
+              <div className="bg-white border border-gray-200 shadow-sm overflow-hidden">
+
+                {/* Prix block — prominent, top of card */}
+                {(activeModule.prix !== undefined || activeModule.prixInscription !== undefined || activeModule.methodePaiement) && (
+                  <div className="bg-[#1A3A6E] p-6 text-white">
+                    {activeModule.prix !== undefined ? (
+                      <div className="mb-4">
+                        <p className="text-[10px] font-bold uppercase tracking-widest text-white/60 mb-1">Coût de la formation</p>
+                        <div className="text-3xl font-heading font-bold text-white leading-none">
+                          {activeModule.prix.toLocaleString('fr-GN')}
+                          <span className="text-sm font-bold ml-1 text-white/70">GNF</span>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="text-lg font-heading font-bold text-white/80 mb-4">Tarif sur demande</div>
+                    )}
+                    
+                    {activeModule.prixInscription !== undefined && (
+                      <div className="mb-4 bg-white/5 p-3 border-l-2 border-[#f0b429]">
+                        <p className="text-[9px] font-bold uppercase tracking-widest text-white/60 mb-1">Frais d'inscription</p>
+                        <div className="text-lg font-bold text-white leading-none">
+                          {activeModule.prixInscription.toLocaleString('fr-GN')}
+                          <span className="text-[10px] font-bold ml-1 text-white/70">GNF</span>
+                        </div>
+                      </div>
+                    )}
+
+                    {activeModule.methodePaiement && (
+                      <div className="inline-flex items-center gap-1.5 bg-white/10 border border-white/20 px-3 py-1.5">
+                        <span className="text-[10px] font-bold uppercase tracking-widest text-white/80">Paiement :</span>
+                        <span className="text-[10px] font-bold text-[#f0b429] uppercase tracking-wider">{activeModule.methodePaiement}</span>
+                      </div>
+                    )}
                   </div>
-                  <div className="flex items-center justify-between text-xs py-2 border-b border-gray-50">
-                    <span className="text-gray-400 font-medium">Niveau requis</span>
-                    <span className="font-bold text-[var(--color-primary)]">{details.level}</span>
-                  </div>
-                  <div className="flex items-center justify-between text-xs py-2 border-b border-gray-50">
-                    <span className="text-gray-400 font-medium">Modalité</span>
-                    <span className="font-bold text-[var(--color-primary)]">100% Pratique</span>
-                  </div>
-                  {activeModule.prix !== undefined && (
+                )}
+
+                <div className="p-6">
+                  <h3 className="text-sm font-bold uppercase tracking-wider text-[var(--color-primary)] mb-5 border-b border-gray-100 pb-3">Fiche technique</h3>
+                  
+                  <div className="space-y-4 mb-8">
                     <div className="flex items-center justify-between text-xs py-2 border-b border-gray-50">
-                      <span className="text-gray-400 font-medium">Tarif</span>
-                      <span className="font-black text-[var(--color-accent)] text-sm">
-                        {activeModule.prix.toLocaleString('fr-GN')} GNF
-                      </span>
+                      <span className="text-gray-400 font-medium">Durée</span>
+                      <span className="font-bold text-[var(--color-primary)]">{details.duration.split(" (")[0]}</span>
                     </div>
-                  )}
-                  <div className="flex items-center justify-between text-xs py-2">
-                    <span className="text-gray-400 font-medium">Certification</span>
-                    <span className="font-bold text-emerald-600">Attestation officielle</span>
+                    {details.dateDebut && (
+                      <div className="flex items-center justify-between text-xs py-2 border-b border-gray-50">
+                        <span className="text-gray-400 font-medium">Début</span>
+                        <span className="font-bold text-[var(--color-accent)]">{details.dateDebut}</span>
+                      </div>
+                    )}
+                    {details.planning && details.planning.length > 0 ? (
+                      <div className="border-b border-gray-50 py-2">
+                        <span className="text-gray-400 font-medium block text-xs mb-1">Planning</span>
+                        <div className="space-y-1 pl-2 border-l-2 border-[var(--color-accent)]">
+                          {details.planning.map((p: { jour: string; horaire: string }, i: number) => (
+                            <div key={i} className="flex justify-between text-[11px]">
+                              <span className="font-semibold text-[var(--color-primary)]">{p.jour}</span>
+                              <span className="text-gray-600">{p.horaire}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ) : (
+                      <>
+                        {details.calendrier && (
+                          <div className="flex items-center justify-between text-xs py-2 border-b border-gray-50">
+                            <span className="text-gray-400 font-medium">Jours</span>
+                            <span className="font-bold text-[var(--color-primary)]">{details.calendrier}</span>
+                          </div>
+                        )}
+                        {details.horaires && (
+                          <div className="flex items-center justify-between text-xs py-2 border-b border-gray-50">
+                            <span className="text-gray-400 font-medium">Horaires</span>
+                            <span className="font-bold text-[var(--color-primary)]">{details.horaires}</span>
+                          </div>
+                        )}
+                      </>
+                    )}
+                    <div className="flex items-center justify-between text-xs py-2 border-b border-gray-50">
+                      <span className="text-gray-400 font-medium">Niveau requis</span>
+                      <span className="font-bold text-[var(--color-primary)]">{details.level}</span>
+                    </div>
+                    <div className="flex items-center justify-between text-xs py-2 border-b border-gray-50">
+                      <span className="text-gray-400 font-medium">Modalité</span>
+                      <span className="font-bold text-[var(--color-primary)]">100% Pratique</span>
+                    </div>
+                    <div className="flex items-center justify-between text-xs py-2">
+                      <span className="text-gray-400 font-medium">Certification</span>
+                      <span className="font-bold text-emerald-600">Attestation officielle</span>
+                    </div>
                   </div>
-                </div>
 
-                <div className="space-y-3">
-                  <Link 
-                    href={inscriptionUrl}
-                    className="w-full flex items-center justify-center gap-2 px-6 py-4 bg-[var(--color-accent)] hover:bg-[var(--color-primary)] text-white text-xs font-bold uppercase tracking-wider transition-colors shadow-sm"
-                  >
-                    S'inscrire à ce module
-                    <Send className="w-3.5 h-3.5" />
-                  </Link>
+                  <div className="space-y-3">
+                    {details.statutInscription === "Ouverte" ? (
+                      <Link 
+                        href={inscriptionUrl}
+                        className="w-full flex items-center justify-center gap-2 px-6 py-4 bg-[#8B0000] hover:bg-[var(--color-primary)] text-white text-xs font-bold uppercase tracking-wider transition-colors shadow-sm"
+                      >
+                        S'inscrire à ce module
+                        <Send className="w-3.5 h-3.5" />
+                      </Link>
+                    ) : (
+                      <button 
+                        disabled
+                        className="w-full flex items-center justify-center gap-2 px-6 py-4 bg-gray-300 text-gray-500 text-xs font-bold uppercase tracking-wider cursor-not-allowed"
+                      >
+                        Inscriptions fermées
+                      </button>
+                    )}
 
-                  <a 
-                    href={whatsappUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="w-full flex items-center justify-center gap-2 px-6 py-4 border-2 border-emerald-500 hover:bg-emerald-50 text-emerald-600 text-xs font-bold uppercase tracking-wider transition-colors"
-                  >
-                    <MessageCircle className="w-4 h-4 fill-current" />
-                    Conseils par WhatsApp
-                  </a>
+                    <a 
+                      href={whatsappUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="w-full flex items-center justify-center gap-2 px-6 py-4 border-2 border-emerald-500 hover:bg-emerald-50 text-emerald-600 text-xs font-bold uppercase tracking-wider transition-colors"
+                    >
+                      <MessageCircle className="w-4 h-4 fill-current" />
+                      Conseils par WhatsApp
+                    </a>
+                  </div>
                 </div>
               </div>
+
 
               {/* Target Audience Card */}
               <div className="bg-white border border-gray-200 p-6 shadow-sm">
@@ -594,7 +686,7 @@ export default function FormationDetailPage() {
                   Public Cible
                 </h3>
                 <ul className="space-y-2">
-                  {details.audience.map((item, index) => (
+                  {details.publicCible.map((item: string, index: number) => (
                     <li key={index} className="flex items-center gap-2 text-xs text-gray-600 font-sans">
                       <span className="w-1.5 h-1.5 bg-[var(--color-accent)] rounded-none flex-shrink-0" />
                       {item}
@@ -602,13 +694,38 @@ export default function FormationDetailPage() {
                   ))}
                 </ul>
                 
-                <h3 className="text-sm font-bold uppercase tracking-wider text-[var(--color-primary)] mt-6 mb-3 border-b border-gray-100 pb-3 flex items-center gap-2">
-                  <HelpCircle className="w-4 h-4 text-[var(--color-accent)]" />
-                  Prérequis
-                </h3>
-                <p className="text-gray-500 text-xs leading-relaxed font-sans italic">
-                  {details.prerequisites}
-                </p>
+                {details.prerequis && details.prerequis.length > 0 && (
+                  <>
+                    <h3 className="text-sm font-bold uppercase tracking-wider text-[var(--color-primary)] mt-6 mb-3 border-b border-gray-100 pb-3 flex items-center gap-2">
+                      <HelpCircle className="w-4 h-4 text-[var(--color-accent)]" />
+                      Prérequis
+                    </h3>
+                    <div className="space-y-2">
+                      {details.prerequis.map((req: string, index: number) => (
+                        <p key={index} className="text-gray-500 text-xs leading-relaxed font-sans italic">
+                          {req}
+                        </p>
+                      ))}
+                    </div>
+                  </>
+                )}
+
+                {details.debouches && details.debouches.length > 0 && (
+                  <>
+                    <h3 className="text-sm font-bold uppercase tracking-wider text-[var(--color-primary)] mt-6 mb-3 border-b border-gray-100 pb-3 flex items-center gap-2">
+                      <Briefcase className="w-4 h-4 text-[var(--color-accent)]" />
+                      Débouchés professionnels
+                    </h3>
+                    <ul className="space-y-2">
+                      {details.debouches.map((job: string, index: number) => (
+                        <li key={index} className="flex items-center gap-2 text-xs text-gray-600 font-sans">
+                          <span className="w-1.5 h-1.5 bg-emerald-500 rounded-none flex-shrink-0" />
+                          {job}
+                        </li>
+                      ))}
+                    </ul>
+                  </>
+                )}
               </div>
 
             </div>
