@@ -250,6 +250,17 @@ export default function AdminPage() {
   const [editingAlbumTitle, setEditingAlbumTitle] = useState<string | null>(null);
   const [isSavingGallery, setIsSavingGallery] = useState(false);
 
+  // Testimonials states
+  const [showAddTestimonialModal, setShowAddTestimonialModal] = useState(false);
+  const [editingTestimonialIndex, setEditingTestimonialIndex] = useState<number | null>(null);
+  const [testimName, setTestimName] = useState("");
+  const [testimRole, setTestimRole] = useState("");
+  const [testimText, setTestimText] = useState("");
+  const [testimRating, setTestimRating] = useState<number>(5);
+  const [testimImage, setTestimImage] = useState("");
+  const [testimVideo, setTestimVideo] = useState("");
+  const [testimType, setTestimType] = useState<"standard" | "video">("standard");
+
   const [selectedRequest, setSelectedRequest] = useState<InscriptionRequest | null>(null);
   const [selectedMessage, setSelectedMessage] = useState<ContactMessage | null>(null);
 
@@ -312,7 +323,7 @@ export default function AdminPage() {
       } else if (error.code === "auth/user-not-found" || error.code === "auth/wrong-password") {
         errorMsg = "Email ou mot de passe incorrect.";
       } else if (error.code === "auth/too-many-requests") {
-        errorMsg = "Trop de tentatives de connexion échouées. Compte temporairement bloqué.";
+        errorMsg = "Trop de tentatives de connexion echouees. Compte temporairement bloque.";
       } else if (error.message) {
         errorMsg = `Erreur de connexion : ${error.message}`;
       }
@@ -358,7 +369,7 @@ export default function AdminPage() {
       };
       await db.saveSettings(updatedSettings);
       setSettings(updatedSettings);
-      setSettingsSuccessMsg("Paramètres enregistrés avec succès !");
+      setSettingsSuccessMsg("ParamÃ¨tres enregistrés avec succÃ¨s !");
     } catch (error) {
       console.error("Error saving settings:", error);
       setSettingsErrorMsg("Une erreur est survenue lors de l'enregistrement.");
@@ -371,7 +382,7 @@ export default function AdminPage() {
     setUserErrorMsg("");
     if (!newAdminEmail || !newAdminPassword) return;
     if (newAdminPassword.length < 6) {
-      setUserErrorMsg("Le mot de passe doit faire au moins 6 caractères.");
+      setUserErrorMsg("Le mot de passe doit faire au moins 6 caractÃ¨res.");
       return;
     }
 
@@ -390,12 +401,12 @@ export default function AdminPage() {
       
       setNewAdminEmail("");
       setNewAdminPassword("");
-      setUserSuccessMsg("Compte administrateur créé avec succès !");
+      setUserSuccessMsg("Compte administrateur créé avec succÃ¨s !");
     } catch (error: any) {
       console.error("Error creating admin:", error);
       let errorMsg = "Erreur lors de la création du compte.";
       if (error.code === "auth/email-already-in-use") {
-        errorMsg = "Cette adresse email est déjà utilisée.";
+        errorMsg = "Cette adresse email est déjÃ  utilisée.";
       } else if (error.code === "auth/invalid-email") {
         errorMsg = "Adresse email invalide.";
       } else if (error.code === "auth/weak-password") {
@@ -691,7 +702,59 @@ export default function AdminPage() {
     setGallery(current);
   };
 
-  // 5. Testimonials toggle active
+  // 5. Testimonials CRUD
+  const handleAddOrEditTestimonial = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const isVideo = testimType === "video";
+    if (!testimName) return;
+    if (!isVideo && !testimText) return;
+    if (isVideo && !testimVideo) return;
+
+    let current = [...testimonials];
+    
+    const initials = testimName.split(" ").map(n => n[0]).join("").substring(0, 2).toUpperCase();
+    const colors = ["bg-blue-100 text-blue-800", "bg-amber-100 text-amber-800", "bg-green-100 text-green-800", "bg-purple-100 text-purple-800"];
+    
+    const updatedFields = {
+      name: testimName,
+      role: testimRole,
+      text: testimText,
+      rating: testimRating,
+      type: testimType,
+      image: testimImage || "",
+      videoUrl: testimVideo || "",
+      initials,
+    };
+
+    if (editingTestimonialIndex !== null) {
+      current[editingTestimonialIndex] = { ...current[editingTestimonialIndex], ...updatedFields };
+    } else {
+      current.unshift({
+        ...updatedFields,
+        color: colors[Math.floor(Math.random() * colors.length)],
+        active: true,
+      });
+    }
+
+    try {
+      await db.saveTestimonials(current);
+      setTestimonials(current);
+      setShowAddTestimonialModal(false);
+      setEditingTestimonialIndex(null);
+    } catch(err) {
+      console.error(err);
+      alert("Erreur lors de l'enregistrement du témoignage.");
+    }
+  };
+
+  const handleDeleteTestimonial = async (index: number) => {
+    if (!confirm("Voulez-vous vraiment supprimer ce témoignage ?")) return;
+    const current = [...testimonials];
+    current.splice(index, 1);
+    await db.saveTestimonials(current);
+    setTestimonials(current);
+  };
+
   const handleToggleTestimonial = async (index: number) => {
     const list = [...testimonials];
     list[index].active = !list[index].active;
@@ -791,7 +854,7 @@ export default function AdminPage() {
                 type="password"
                 required
                 className="w-full bg-white/5 border border-white/20 px-4 py-3 text-sm text-white focus:outline-none focus:border-[var(--color-accent)] focus:ring-1 focus:ring-[var(--color-accent)] transition-all rounded-none"
-                placeholder="••••••••"
+                placeholder="••••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
               />
@@ -812,7 +875,7 @@ export default function AdminPage() {
 
           <div className="mt-8 text-center pt-6 border-t border-white/10">
             <p className="text-xs text-gray-400">
-              🔒 Sécurisé par Firebase Authentication
+              ðŸ”’ Sécurisé par Firebase Authentication
             </p>
           </div>
         </motion.div>
@@ -847,7 +910,7 @@ export default function AdminPage() {
             { id: "galerie", label: "Galerie Médias", icon: <ImageIcon className="w-4 h-4" /> },
             { id: "messages", label: "Messages de Contact", icon: <Mail className="w-4 h-4" />, badge: unreadMessagesCount },
             { id: "users", label: "Utilisateurs Admin", icon: <Users className="w-4 h-4" /> },
-            { id: "settings", label: "Paramètres", icon: <Settings className="w-4 h-4" /> }
+            { id: "settings", label: "ParamÃ¨tres", icon: <Settings className="w-4 h-4" /> }
           ].map((tab) => (
             <button
               key={tab.id}
@@ -897,13 +960,13 @@ export default function AdminPage() {
               {activeTab === "overview" && "Vue d'ensemble"}
               {activeTab === "inscriptions" && "Suivi des Inscriptions & Devis"}
               {activeTab === "formations" && "Gestion des Formations"}
-              {activeTab === "actualites" && "Éditeur du Blog & Actualités"}
+              {activeTab === "actualites" && "Ã‰diteur du Blog & Actualités"}
               {activeTab === "testimonials" && "Gestion des Témoignages"}
               {activeTab === "messages" && "Messages clients"}
               {activeTab === "users" && "Utilisateurs Admin"}
-              {activeTab === "settings" && "Paramètres du Site"}
+              {activeTab === "settings" && "ParamÃ¨tres du Site"}
             </h2>
-            <p className="text-xs text-gray-500 mt-0.5">Bienvenue dans l'interface de contrôle du cabinet CFIG Guinée.</p>
+            <p className="text-xs text-gray-500 mt-0.5">Bienvenue dans l'interface de contrÃ´le du cabinet CFIG Guinée.</p>
           </div>
           <Link
             href="/"
@@ -1022,13 +1085,13 @@ export default function AdminPage() {
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                   {/* Recents Inscriptions */}
                   <div className="bg-white border border-gray-200 p-6 shadow-sm flex flex-col">
-                    <h3 className="text-sm font-bold uppercase tracking-wider text-[var(--color-primary)] mb-4 border-b border-gray-100 pb-3">Dernières Inscriptions</h3>
+                    <h3 className="text-sm font-bold uppercase tracking-wider text-[var(--color-primary)] mb-4 border-b border-gray-100 pb-3">DerniÃ¨res Inscriptions</h3>
                     <div className="flex-grow divide-y divide-gray-100">
                       {inscriptions.slice(0, 4).map((ins, index) => (
                         <div key={index} className="py-3.5 flex items-center justify-between gap-4">
                           <div>
                             <h4 className="font-bold text-sm text-[var(--color-primary)]">{ins.fullName}</h4>
-                            <p className="text-xs text-gray-500">{ins.domain} — <span className="italic">{ins.requestType}</span></p>
+                            <p className="text-xs text-gray-500">{ins.domain} <span className="italic">{ins.requestType}</span></p>
                           </div>
                           <span className={`text-[9px] font-bold px-2 py-0.5 uppercase tracking-wider ${
                             ins.status === "Validé" ? "bg-green-100 text-green-700" :
@@ -1173,7 +1236,7 @@ export default function AdminPage() {
                       {filteredInscriptions.length === 0 && (
                         <tr>
                           <td colSpan={7} className="py-12 text-center text-gray-500 italic">
-                            Aucune inscription ne correspond à ces critères.
+                            Aucune inscription ne correspond Ã  ces critÃ¨res.
                           </td>
                         </tr>
                       )}
@@ -1382,10 +1445,27 @@ export default function AdminPage() {
                 exit={{ opacity: 0 }}
                 className="space-y-6"
               >
-                <div className="bg-white border border-gray-200 p-6 shadow-sm">
-                  <h3 className="text-sm font-bold uppercase tracking-wider text-[var(--color-primary)] mb-5 border-b border-gray-100 pb-3">Témoignages Alumni actifs</h3>
+                <div className="flex justify-between items-center bg-white p-4 border border-gray-200 shadow-sm mb-6">
+                  <div>
+                    <h3 className="text-sm font-bold uppercase tracking-wider text-[var(--color-primary)]">Témoignages Alumni</h3>
+                    <p className="text-[10px] text-gray-400 mt-1 uppercase tracking-widest">
+                      {testimonials.length} témoignage(s)
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => {
+                      setEditingTestimonialIndex(null);
+                      setTestimName(""); setTestimRole(""); setTestimText(""); setTestimRating(5);
+                      setTestimImage(""); setTestimVideo("");
+                      setShowAddTestimonialModal(true);
+                    }}
+                    className="px-4 py-2 bg-[var(--color-accent)] text-white text-xs font-bold uppercase tracking-wider flex items-center gap-2 hover:bg-[var(--color-primary)] transition-colors rounded-none"
+                  >
+                    <Plus className="w-4 h-4" /> Ajouter un témoignage
+                  </button>
+                </div>
                   
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {testimonials.map((test, index) => (
                       <div 
                         key={index} 
@@ -1408,22 +1488,41 @@ export default function AdminPage() {
                         </p>
 
                         <div className="flex justify-between items-center pt-2">
-                          <span className="text-[10px] text-amber-500 font-bold">★ {test.rating}/5</span>
-                          <button
-                            onClick={() => handleToggleTestimonial(index)}
-                            className={`px-3 py-1.5 text-[9px] font-bold uppercase tracking-wider border ${
-                              test.active 
-                                ? "bg-red-50 text-red-700 border-red-200 hover:bg-red-100" 
-                                : "bg-green-50 text-green-700 border-green-200 hover:bg-green-100"
-                            }`}
-                          >
-                            {test.active ? "Désactiver" : "Activer"}
-                          </button>
+                          <span className="text-[10px] text-amber-500 font-bold">{test.rating}/5</span>
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() => {
+                                setEditingTestimonialIndex(index);
+                                setTestimName(test.name); setTestimRole(test.role); setTestimText(test.text);
+                                setTestimRating(test.rating); setTestimImage(test.image || ""); setTestimVideo(test.videoUrl || "");
+                                setTestimType((test.type as any) === "video_wide" || (test.type as any) === "video_vertical" ? "video" : (test.type || "standard"));
+                                setShowAddTestimonialModal(true);
+                              }}
+                              className="px-2 py-1 text-[9px] font-bold uppercase tracking-wider border bg-gray-50 text-gray-700 hover:bg-gray-100"
+                            >
+                              Modifier
+                            </button>
+                            <button
+                              onClick={() => handleDeleteTestimonial(index)}
+                              className="px-2 py-1 text-[9px] font-bold uppercase tracking-wider border bg-red-50 text-red-700 hover:bg-red-100"
+                            >
+                              Supprimer
+                            </button>
+                            <button
+                              onClick={() => handleToggleTestimonial(index)}
+                              className={`px-3 py-1.5 text-[9px] font-bold uppercase tracking-wider border ${
+                                test.active 
+                                  ? "bg-red-50 text-red-700 border-red-200 hover:bg-red-100" 
+                                  : "bg-green-50 text-green-700 border-green-200 hover:bg-green-100"
+                              }`}
+                            >
+                              {test.active ? "Désactiver" : "Activer"}
+                            </button>
+                          </div>
                         </div>
                       </div>
                     ))}
                   </div>
-                </div>
               </motion.div>
             )}
 
@@ -1443,7 +1542,7 @@ export default function AdminPage() {
                   <div>
                     <h3 className="text-sm font-bold uppercase tracking-wider text-[var(--color-primary)]">Galerie Médias</h3>
                     <p className="text-[10px] text-gray-400 mt-1 uppercase tracking-widest">
-                      {gallery.length} média(s) — {new Set(gallery.map(g => g.category)).size} catégorie(s)
+                      {gallery.length} média(s) | {new Set(gallery.map(g => g.category)).size} catégorie(s)
                     </p>
                   </div>
                   <button
@@ -1574,7 +1673,7 @@ export default function AdminPage() {
                       {filteredMessages.length === 0 && (
                         <tr>
                           <td colSpan={5} className="py-12 text-center text-gray-500 italic">
-                            Aucun message de contact reçu.
+                            Aucun message de contact reÃ§u.
                           </td>
                         </tr>
                       )}
@@ -1596,7 +1695,7 @@ export default function AdminPage() {
                 className="space-y-6 max-w-2xl"
               >
                 <div className="bg-white border border-gray-200 p-8 shadow-sm">
-                  <h3 className="text-sm font-bold uppercase tracking-wider text-[var(--color-primary)] mb-6 border-b border-gray-100 pb-3">Paramètres globaux du site</h3>
+                  <h3 className="text-sm font-bold uppercase tracking-wider text-[var(--color-primary)] mb-6 border-b border-gray-100 pb-3">ParamÃ¨tres globaux du site</h3>
                   
                   <form onSubmit={handleSaveSettings} className="space-y-5">
                     <div>
@@ -1705,7 +1804,7 @@ export default function AdminPage() {
                           type="password"
                           required
                           className="w-full bg-gray-50 border border-gray-300 px-4 py-2 text-xs focus:outline-none focus:border-[var(--color-primary)] rounded-none"
-                          placeholder="••••••••"
+                          placeholder="••••••••••"
                           value={newAdminPassword}
                           onChange={(e) => setNewAdminPassword(e.target.value)}
                         />
@@ -1789,7 +1888,7 @@ export default function AdminPage() {
           3. FULL MODALS (CRUD / VIEW DETAILS)
       ================================================ */}
       
-      {/* Modal: Add/Edit Module — Multi-Tab */}
+      {/* Modal: Add/Edit Module Multi-Tab */}
       {showAddModuleModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <motion.div
@@ -1849,7 +1948,7 @@ export default function AdminPage() {
                         <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-1.5">Intitulé de la formation *</label>
                         <input type="text" required disabled={isSavingModule}
                           className="w-full bg-gray-50 border border-gray-300 px-3 py-2 text-xs focus:outline-none focus:border-[var(--color-primary)] rounded-none disabled:opacity-50"
-                          placeholder="Ex: Initiation à Excel"
+                          placeholder="Ex: Initiation Ã  Excel"
                           value={newModuleTitle} onChange={e => setNewModuleTitle(e.target.value)} />
                       </div>
                       <div className="col-span-2">
@@ -1888,7 +1987,7 @@ export default function AdminPage() {
                             className="w-full bg-white border border-gray-300 px-3 py-2 text-xs focus:outline-none focus:border-[var(--color-primary)] rounded-none disabled:opacity-50"
                             placeholder="Ex: 2 000 000" value={newModulePrix}
                             onChange={e => setNewModulePrix(e.target.value === "" ? "" : Number(e.target.value))} />
-                          <p className="text-[9px] text-gray-400 mt-1">Coût total de la formation</p>
+                          <p className="text-[9px] text-gray-400 mt-1">CoÃ»t total de la formation</p>
                         </div>
                         <div>
                           <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-1.5">Frais d'inscription (GNF)</label>
@@ -1896,7 +1995,7 @@ export default function AdminPage() {
                             className="w-full bg-white border border-gray-300 px-3 py-2 text-xs focus:outline-none focus:border-[var(--color-primary)] rounded-none disabled:opacity-50"
                             placeholder="Ex: 100 000" value={newModulePrixInscription}
                             onChange={e => setNewModulePrixInscription(e.target.value === "" ? "" : Number(e.target.value))} />
-                          <p className="text-[9px] text-gray-400 mt-1">Frais d'enrôlement seulement</p>
+                          <p className="text-[9px] text-gray-400 mt-1">Frais d'enrÃ´lement seulement</p>
                         </div>
                       </div>
                       <div>
@@ -1988,7 +2087,7 @@ export default function AdminPage() {
                 {modalTab === 3 && (
                   <div className="space-y-4">
                     <div>
-                      <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-1.5">Présentation <span className="text-gray-400 normal-case font-normal">(optionnel)</span></label>
+                      <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-1.5">Presentation <span className="text-gray-400 normal-case font-normal">(optionnel)</span></label>
                       <textarea rows={4} disabled={isSavingModule}
                         className="w-full bg-gray-50 border border-gray-300 px-3 py-2 text-xs focus:outline-none focus:border-[var(--color-primary)] rounded-none disabled:opacity-50 resize-none"
                         placeholder="Décrivez la formation en quelques lignes..."
@@ -1998,7 +2097,7 @@ export default function AdminPage() {
                       <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-1.5">Objectifs pédagogiques <span className="text-gray-400 normal-case font-normal">(1 par ligne)</span></label>
                       <textarea rows={4} disabled={isSavingModule}
                         className="w-full bg-gray-50 border border-gray-300 px-3 py-2 text-xs focus:outline-none focus:border-[var(--color-primary)] rounded-none disabled:opacity-50 resize-none"
-                        placeholder="Maîtriser les fondamentaux de Excel\nCréer des tableaux croisés dynamiques\n..."
+                        placeholder="MaÃ®triser les fondamentaux de Excel\nCréer des tableaux croisés dynamiques\n..."
                         value={newModuleObjectifs} onChange={e => setNewModuleObjectifs(e.target.value)} />
                     </div>
                     <div>
@@ -2012,7 +2111,7 @@ export default function AdminPage() {
                       <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-1.5">Public cible <span className="text-gray-400 normal-case font-normal">(1 par ligne)</span></label>
                       <textarea rows={3} disabled={isSavingModule}
                         className="w-full bg-gray-50 border border-gray-300 px-3 py-2 text-xs focus:outline-none focus:border-[var(--color-primary)] rounded-none disabled:opacity-50 resize-none"
-                        placeholder="Étudiants\nProfessionnels en reconversion\n..."
+                        placeholder="Etudiants\nProfessionnels en reconversion\n..."
                         value={newModulePublicCible} onChange={e => setNewModulePublicCible(e.target.value)} />
                     </div>
                     <div>
@@ -2028,7 +2127,7 @@ export default function AdminPage() {
                 {/* === ONGLET 4: Programme Détaillé === */}
                 {modalTab === 4 && (
                   <div className="space-y-4">
-                    <p className="text-[10px] text-gray-400">Ajoutez chaque module du programme. Les points de contenu sont séparés par des retours à la ligne.</p>
+                    <p className="text-[10px] text-gray-400">Ajoutez chaque module du programme. Les points de contenu sont séparés par des retours Ã  la ligne.</p>
                     {newModuleProgramme.map((chapter, i) => (
                       <div key={i} className="border border-gray-200 p-4 bg-gray-50 space-y-2">
                         <div className="flex items-center gap-2">
@@ -2039,13 +2138,13 @@ export default function AdminPage() {
                               arr.splice(i, 1);
                               setNewModuleProgramme(arr);
                             }} className="ml-auto text-red-400 hover:text-red-600 text-[10px] font-bold">
-                              ✕ Supprimer
+                               Supprimer
                             </button>
                           )}
                         </div>
                         <input type="text" disabled={isSavingModule}
                           className="w-full bg-white border border-gray-300 px-3 py-2 text-xs focus:outline-none focus:border-[var(--color-primary)] rounded-none disabled:opacity-50"
-                          placeholder="Titre du module (ex: Introduction à PowerBI)"
+                          placeholder="Titre du module (ex: Introduction Ã  PowerBI)"
                           value={chapter.title}
                           onChange={e => {
                             const arr = [...newModuleProgramme];
@@ -2073,7 +2172,7 @@ export default function AdminPage() {
 
               </div>
 
-              {/* Sticky Footer — buttons always visible */}
+              {/* Sticky Footer buttons always visible */}
               <div className="flex-shrink-0 px-6 py-4 border-t border-gray-100 bg-white flex items-center justify-between">
                 <div className="flex gap-1">
                   {([1,2,3,4] as const).map(n => (
@@ -2086,13 +2185,13 @@ export default function AdminPage() {
                   {modalTab > 1 && (
                     <button type="button" onClick={() => setModalTab((modalTab - 1) as 1|2|3|4)}
                       className="px-4 py-2 border border-gray-300 text-xs font-bold uppercase tracking-wider hover:bg-gray-50 text-gray-600 rounded-none">
-                      ← Précédent
+                      Précédent
                     </button>
                   )}
                   {modalTab < 4 ? (
                     <button type="button" onClick={() => setModalTab((modalTab + 1) as 1|2|3|4)}
                       className="px-4 py-2 bg-[var(--color-accent)] text-white text-xs font-bold uppercase tracking-wider hover:bg-[var(--color-primary)] transition-colors rounded-none">
-                      Suivant →
+                      Suivant
                     </button>
                   ) : (
                     <button type="submit" disabled={isSavingModule}
@@ -2100,7 +2199,7 @@ export default function AdminPage() {
                       {isSavingModule ? (
                         <><div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></div> Enregistrement...</>
                       ) : (
-                        editingModule !== null ? " Enregistrer" : "✓ Créer la formation"
+                        editingModule !== null ? " Enregistrer" : " Créer la formation"
                       )}
                     </button>
                   )}
@@ -2143,7 +2242,7 @@ export default function AdminPage() {
                   <input
                     type="text"
                     className="w-full bg-gray-50 border border-gray-300 px-4 py-2 text-xs focus:outline-none focus:border-[var(--color-primary)] rounded-none"
-                    placeholder="Ex: Conseils, Événements"
+                    placeholder="Ex: Conseils, Ã‰vénements"
                     value={articleCategory}
                     onChange={(e) => setArticleCategory(e.target.value)}
                   />
@@ -2262,7 +2361,7 @@ export default function AdminPage() {
                 <input
                   type="text" required
                   className="w-full bg-gray-50 border border-gray-300 px-4 py-2 text-xs focus:outline-none focus:border-[var(--color-primary)] rounded-none"
-                  placeholder="Ex: Remise des diplômes 2024"
+                  placeholder="Ex: Remise des diplÃ´mes 2024"
                   value={galleryTitle} onChange={(e) => setGalleryTitle(e.target.value)}
                 />
               </div>
@@ -2278,7 +2377,7 @@ export default function AdminPage() {
                   <option value="Salles de cours">Salles de cours</option>
                   <option value="Remises de certificats">Remises de certificats</option>
                   <option value="Ateliers">Ateliers</option>
-                  <option value="Événements divers">Événements divers</option>
+                  <option value="Ã‰vénements divers">Ã‰vénements divers</option>
                   <option value="Vie étudiante">Vie étudiante</option>
                 </select>
               </div>
@@ -2294,7 +2393,7 @@ export default function AdminPage() {
                     newMedia.splice(index, 1);
                     return newMedia;
                   })}
-                  label={editingGalleryId ? "Remplacer le média" : editingAlbumTitle ? "Ajouter d'autres médias à l'album" : "Uploader un ou plusieurs médias"}
+                  label={editingGalleryId ? "Remplacer le média" : editingAlbumTitle ? "Ajouter d'autres médias Ã  l'album" : "Uploader un ou plusieurs médias"}
                   maxFiles={editingGalleryId ? 1 : 15}
                 />
               </div>
@@ -2321,6 +2420,156 @@ export default function AdminPage() {
                   ) : (
                     "Enregistrer"
                   )}
+                </button>
+              </div>
+            </form>
+          </motion.div>
+        </div>
+      )}
+
+      {/* Modal: Add/Edit Testimonial */}
+      {showAddTestimonialModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="bg-white w-full max-w-lg border border-gray-200 shadow-2xl text-gray-800 rounded-none max-h-[90vh] overflow-y-auto"
+          >
+            <div className="flex justify-between items-center px-6 py-4 border-b border-gray-100 sticky top-0 bg-white z-10">
+              <h3 className="text-base font-heading font-bold text-[var(--color-primary)]">
+                {editingTestimonialIndex !== null ? "Modifier le témoignage" : "Ajouter un témoignage"}
+              </h3>
+              <button onClick={() => setShowAddTestimonialModal(false)} className="text-gray-400 hover:text-gray-600">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleAddOrEditTestimonial} className="px-6 py-5 space-y-5">
+              {/* Type selector */}
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-2">Type de témoignage *</label>
+                <div className="grid grid-cols-2 gap-2">
+                  {([
+                    { value: "standard" as const, label: "Standard", desc: "Texte + photo portrait", icon: "👤" },
+                    { value: "video" as const, label: "Vidéo", desc: "Témoignage vidéo", icon: "🎬" },
+                  ]).map(opt => (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      onClick={() => setTestimType(opt.value)}
+                      className={`p-3 border text-left transition-all ${
+                        testimType === opt.value
+                          ? "border-[var(--color-primary)] bg-[var(--color-primary)]/5 text-[var(--color-primary)]"
+                          : "border-gray-200 text-gray-500 hover:border-gray-300"
+                      }`}
+                    >
+                      <div className="text-lg mb-1">{opt.icon}</div>
+                      <div className="text-[10px] font-bold uppercase tracking-wider">{opt.label}</div>
+                      <div className="text-[9px] text-gray-400 mt-0.5">{opt.desc}</div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Common fields */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-1.5">Nom Complet *</label>
+                  <input
+                    type="text" required
+                    className="w-full bg-gray-50 border border-gray-300 px-3 py-2 text-xs focus:outline-none focus:border-[var(--color-primary)] rounded-none"
+                    placeholder="Ex: Amadou Diallo"
+                    value={testimName} onChange={(e) => setTestimName(e.target.value)}
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-1.5">Rôle / Entreprise</label>
+                  <input
+                    type="text"
+                    className="w-full bg-gray-50 border border-gray-300 px-3 py-2 text-xs focus:outline-none focus:border-[var(--color-primary)] rounded-none"
+                    placeholder="Ex: Data Analyst chez Orange"
+                    value={testimRole} onChange={(e) => setTestimRole(e.target.value)}
+                  />
+                </div>
+              </div>
+
+              {/* Standard-only fields */}
+              {testimType === "standard" && (
+                <>
+                  <div>
+                    <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-1.5">Témoignage *</label>
+                    <textarea required rows={4}
+                      className="w-full bg-gray-50 border border-gray-300 px-3 py-2 text-xs focus:outline-none focus:border-[var(--color-primary)] rounded-none"
+                      placeholder="Le retour d'expérience de l'apprenant..."
+                      value={testimText} onChange={(e) => setTestimText(e.target.value)}
+                    ></textarea>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-1.5">Note sur 5</label>
+                    <select
+                      className="w-full bg-gray-50 border border-gray-300 px-3 py-2 text-xs focus:outline-none focus:border-[var(--color-primary)] rounded-none"
+                      value={testimRating} onChange={(e) => setTestimRating(Number(e.target.value))}
+                    >
+                      <option value="5">★★★★★ Excellent</option>
+                      <option value="4">★★★★☆ Très bien</option>
+                      <option value="3">★★★☆☆ Bien</option>
+                      <option value="2">★★☆☆☆ Moyen</option>
+                      <option value="1">★☆☆☆☆ Médiocre</option>
+                    </select>
+                  </div>
+                  <div className="p-4 bg-gray-50 border border-gray-200 space-y-2">
+                    <label className="block text-xs font-bold text-[var(--color-primary)] uppercase tracking-wider">Photo Portrait (optionnel)</label>
+                    <p className="text-[10px] text-gray-400">Si absent, les initiales de la personne sont utilisées comme avatar.</p>
+                    <MediaUploader accept="image" value={testimImage} onChange={(url) => setTestimImage(url)} label="Uploader une photo portrait" />
+                  </div>
+                </>
+              )}
+
+              {/* Video-only fields */}
+              {testimType === "video" && (
+                <div className="p-4 bg-gray-50 border border-[var(--color-primary)]/20 space-y-3">
+                  <label className="block text-xs font-bold text-[var(--color-primary)] uppercase tracking-wider">
+                    🎬 Témoignage Vidéo
+                  </label>
+                  <div className="space-y-4">
+                    <p className="text-[10px] text-gray-500 font-medium">Vous pouvez soit coller un lien externe (YouTube, TikTok), soit uploader une vidéo locale (MP4).</p>
+                    
+                    <div className="grid grid-cols-2 gap-4 items-end">
+                      <div>
+                        <label className="block text-[10px] font-bold text-gray-500 mb-1">Lien externe (YouTube, TikTok, Cloudinary…)</label>
+                        <input
+                          type="text"
+                          className="w-full bg-white border border-gray-300 px-3 py-2 text-xs focus:outline-none focus:border-[var(--color-primary)] rounded-none"
+                          placeholder="https://www.youtube.com/watch?v=..."
+                          value={testimVideo} onChange={(e) => setTestimVideo(e.target.value)}
+                        />
+                      </div>
+                      
+                      <div className="flex flex-col h-full justify-end pb-0.5">
+                         <label className="block text-[10px] font-bold text-gray-500 mb-1 text-center border-b border-gray-200 pb-1 w-full mx-auto">OU</label>
+                         <MediaUploader accept="video" value={testimVideo} onChange={(url) => setTestimVideo(url)} label="Uploader fichier vidéo" />
+                      </div>
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-bold text-gray-500 mb-1">Citation (optionnel)</label>
+                    <textarea rows={2}
+                      className="w-full bg-white border border-gray-300 px-3 py-2 text-xs focus:outline-none focus:border-[var(--color-primary)] rounded-none"
+                      placeholder="Courte citation visible sous la vidéo..."
+                      value={testimText} onChange={(e) => setTestimText(e.target.value)}
+                    ></textarea>
+                  </div>
+                </div>
+              )}
+
+              <div className="pt-4 flex justify-end gap-2 border-t border-gray-100">
+                <button type="button" onClick={() => setShowAddTestimonialModal(false)}
+                  className="px-4 py-2 border border-gray-300 text-xs font-bold uppercase tracking-wider hover:bg-gray-50 text-gray-600 rounded-none">
+                  Annuler
+                </button>
+                <button type="submit"
+                  className="px-6 py-2 bg-[var(--color-primary)] text-white text-xs font-bold uppercase tracking-wider hover:bg-[var(--color-accent)] transition-colors rounded-none">
+                  {editingTestimonialIndex !== null ? "Enregistrer" : "Ajouter"}
                 </button>
               </div>
             </form>
@@ -2496,3 +2745,4 @@ export default function AdminPage() {
     </div>
   );
 }
+

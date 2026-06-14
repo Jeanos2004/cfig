@@ -83,7 +83,8 @@ export default function Home() {
       
       const loadedTestimonials = await db.getTestimonials();
       if (loadedTestimonials && loadedTestimonials.length > 0) {
-        setTestimonials(loadedTestimonials.filter((t: any) => t.active));
+        const standards = loadedTestimonials.filter((t: any) => t.active && (!t.type || t.type === "standard"));
+        setTestimonials(standards.slice(0, 3));
       }
       
       const loadedSettings = await db.getSettings();

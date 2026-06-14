@@ -87,8 +87,14 @@ export interface Testimonial {
   text: string;
   rating: number;
   active: boolean;
-  image?: string; // Optional Cloudinary Image URL
-  videoUrl?: string; // Optional Cloudinary Video URL
+  /** Testimonial type:
+   * - "standard"       → text card with optional portrait photo (21st.dev style)
+   * - "standard"       → text card with optional portrait photo
+   * - "video"          → video testimonial (displayed in landscape style)
+   */
+  type?: "standard" | "video";
+  image?: string;    // Portrait photo URL (for standard type or video cover)
+  videoUrl?: string; // Video URL (YouTube, Cloudinary…)
 }
 
 export interface GalleryItem {
