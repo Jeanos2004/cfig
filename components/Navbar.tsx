@@ -145,10 +145,10 @@ export function Navbar() {
             {/* CTA button */}
             <div className="hidden md:block">
               <Link
-                href="/inscription"
-                className="px-6 py-3 bg-[var(--color-accent)] hover:bg-[var(--color-primary)] text-white font-sans font-bold text-xs uppercase tracking-wider transition-colors"
+                href="/student/login"
+                className="px-6 py-3 bg-[var(--color-accent)] hover:bg-[var(--color-primary)] text-white font-sans font-bold text-xs uppercase tracking-wider transition-colors animate-pulse"
               >
-                S'inscrire
+                Espace Étudiant
               </Link>
             </div>
 
@@ -187,11 +187,11 @@ export function Navbar() {
               })}
               <div className="pt-3 border-t border-gray-100">
                 <Link
-                  href="/inscription"
+                  href="/student/login"
                   onClick={() => setIsOpen(false)}
                   className="block w-full text-center py-3 bg-[var(--color-accent)] hover:bg-[var(--color-primary)] text-white font-bold text-xs uppercase tracking-wider transition-colors"
                 >
-                  S'inscrire en ligne
+                  Espace Étudiant (S'inscrire)
                 </Link>
                 <div className="mt-3 text-center text-xs text-gray-400 space-y-1 font-sans">
                   <div>+224 626 62 51 62</div>

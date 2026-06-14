@@ -1,0 +1,124 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { auth } from "@/lib/firebase";
+import { User } from "firebase/auth";
+import { studentDb, StudentProfile, AVAILABLE_COURSES } from "@/lib/studentDb";
+import StudentSidebar from "@/components/student/Sidebar";
+import { CreditCard, FileText, Download, CheckCircle } from "lucide-react";
+
+export default function StudentBillingPage() {
+  const router = useRouter();
+  const [user, setUser] = useState<User | null>(null);
+  const [profile, setProfile] = useState<StudentProfile | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const unsub = auth.onAuthStateChanged(async (currentUser) => {
+      if (currentUser) {
+        setUser(currentUser);
+        const p = await studentDb.getProfile(currentUser.uid);
+        setProfile(p);
+      } else {
+        router.push("/student/login");
+      }
+      setLoading(false);
+    });
+    return () => unsub();
+  }, [router]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center font-sans">
+        <div className="flex flex-col items-center gap-3">
+          <span className="w-10 h-10 border-4 border-[var(--color-primary)] border-t-transparent rounded-full animate-spin" />
+          <p className="text-xs font-bold uppercase tracking-wider text-gray-400">Chargement de vos factures...</p>
+        </div>
+      </div>
+    );
+  }
+
+  const enrolledCourses = AVAILABLE_COURSES.filter(c => profile?.enrolledCourses.includes(c.id));
+
+  // Format currency (GNF)
+  const formatPrice = (price: number) => {
+    return new Intl.NumberFormat("fr-FR", { style: "currency", currency: "GNF", maximumFractionDigits: 0 })
+      .format(price)
+      .replace("GNF", "FG");
+  };
+
+  return (
+    <div className="min-h-screen bg-gray-50 flex font-sans text-gray-800">
+      <StudentSidebar />
+
+      <main className="flex-grow p-8 overflow-y-auto max-h-screen">
+        <div className="mb-8 border-b border-gray-100 pb-5">
+          <h1 className="text-2xl md:text-3xl font-heading font-extrabold text-[var(--color-primary)]">
+            Factures &amp; Historique des Paiements
+          </h1>
+          <p className="text-xs text-gray-400 mt-1 uppercase tracking-wider font-semibold">
+            Consultez vos reçus d'achat et l'historique des règlements effectués pour vos formations.
+          </p>
+        </div>
+
+        {enrolledCourses.length === 0 ? (
+          <div className="bg-white border border-gray-100 p-12 rounded-3xl text-center max-w-xl mx-auto shadow-sm">
+            <CreditCard className="w-12 h-12 text-gray-200 mx-auto mb-4" />
+            <h3 className="text-sm font-bold text-gray-600">Aucun historique de paiement</h3>
+            <p className="text-xs text-gray-400 mt-2">
+              Une fois que vous aurez acheté une formation, votre reçu apparaîtra dans cette section.
+            </p>
+          </div>
+        ) : (
+          <div className="bg-white border border-gray-100 rounded-3xl overflow-hidden shadow-sm max-w-4xl mx-auto">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="bg-gray-50 border-b border-gray-100 text-[10px] font-bold uppercase tracking-wider text-gray-400">
+                    <th className="py-4 px-6">ID Facture</th>
+                    <th className="py-4 px-6">Formation</th>
+                    <th className="py-4 px-6">Moyen de Paiement</th>
+                    <th className="py-4 px-6">Montant</th>
+                    <th className="py-4 px-6">Statut</th>
+                    <th className="py-4 px-6 text-right">Action</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100 text-xs">
+                  {enrolledCourses.map((course, index) => {
+                    const invoiceId = `FAC-${2026 + index}-${Math.floor(1000 + Math.random() * 9000)}`;
+                    return (
+                      <tr key={course.id} className="hover:bg-gray-50/50">
+                        <td className="py-4 px-6 font-mono font-bold text-gray-600">{invoiceId}</td>
+                        <td className="py-4 px-6 font-semibold text-gray-800">{course.title}</td>
+                        <td className="py-4 px-6 text-gray-500">
+                          {index % 2 === 0 ? "Orange Money Guinée" : "Carte Visa"}
+                        </td>
+                        <td className="py-4 px-6 font-bold text-gray-800">{formatPrice(course.price)}</td>
+                        <td className="py-4 px-6">
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-green-50 text-green-700 text-[9px] font-bold uppercase tracking-wider">
+                            <CheckCircle className="w-3 h-3" />
+                            Payé
+                          </span>
+                        </td>
+                        <td className="py-4 px-6 text-right">
+                          <button
+                            onClick={() => alert(`Téléchargement de la facture ${invoiceId}...`)}
+                            className="p-1.5 border border-gray-200 hover:border-[var(--color-primary)] text-gray-500 hover:text-[var(--color-primary)] rounded-lg transition-all"
+                            title="Télécharger la facture"
+                          >
+                            <Download className="w-4 h-4" />
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+      </main>
+    </div>
+  );
+}
