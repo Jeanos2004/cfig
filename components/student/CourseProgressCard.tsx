@@ -10,9 +10,17 @@ interface CourseProgressCardProps {
   totalCount: number;
   isEnrolled: boolean;
   onAction: () => void;
+  variant?: "grid" | "list";
 }
 
-export default function CourseProgressCard({ course, completedCount, totalCount, isEnrolled, onAction }: CourseProgressCardProps) {
+export default function CourseProgressCard({ 
+  course, 
+  completedCount, 
+  totalCount, 
+  isEnrolled, 
+  onAction,
+  variant = "grid"
+}: CourseProgressCardProps) {
   const progressPercent = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
 
   // Format currency (GNF)
@@ -21,6 +29,74 @@ export default function CourseProgressCard({ course, completedCount, totalCount,
       .format(price)
       .replace("GNF", "FG");
   };
+
+  if (variant === "list") {
+    return (
+      <div className="bg-white border border-gray-100 rounded-2xl p-4 shadow-sm hover:shadow-md transition-all duration-300 flex flex-col sm:flex-row sm:items-center justify-between gap-4 font-sans w-full">
+        <div className="flex items-center gap-4 min-w-0">
+          {/* Smaller rounded thumbnail on left */}
+          <div className="relative w-20 h-14 rounded-xl bg-slate-50 overflow-hidden shrink-0">
+            <Image
+              src={course.image}
+              alt={course.title}
+              fill
+              sizes="80px"
+              className="object-cover"
+            />
+            {!isEnrolled && (
+              <div className="absolute inset-0 bg-black/30 backdrop-blur-[1px] flex items-center justify-center">
+                <Lock className="w-3.5 h-3.5 text-white" />
+              </div>
+            )}
+          </div>
+
+          <div className="min-w-0">
+            <span className="inline-block text-[8px] font-black text-blue-600 uppercase tracking-widest mb-0.5">
+              {course.category}
+            </span>
+            <h4 className="font-bold text-xs text-gray-900 leading-tight truncate max-w-[280px] sm:max-w-[400px]">
+              {course.title}
+            </h4>
+            <p className="text-[10px] text-gray-400 mt-1 line-clamp-1 leading-normal">
+              {course.description}
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-center justify-between sm:justify-end gap-6 shrink-0 border-t sm:border-t-0 pt-3 sm:pt-0 border-slate-50">
+          {isEnrolled ? (
+            <div className="flex items-center gap-4 ml-auto">
+              <div className="text-right">
+                <span className="block text-[8px] font-bold uppercase tracking-wider text-gray-400">Progression</span>
+                <span className="block text-[10px] font-extrabold text-blue-650">{progressPercent}%</span>
+              </div>
+              <button
+                onClick={onAction}
+                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-[9px] font-bold uppercase tracking-widest rounded-xl transition-all flex items-center gap-1.5"
+              >
+                <span>Suivre</span>
+                <ArrowRight className="w-3 h-3" />
+              </button>
+            </div>
+          ) : (
+            <div className="flex items-center gap-4 ml-auto">
+              <div className="text-right">
+                <span className="block text-[8px] font-bold uppercase tracking-wider text-gray-400">Prix unique</span>
+                <span className="block text-xs font-black text-gray-900 mt-0.5">{formatPrice(course.price)}</span>
+              </div>
+              <button
+                onClick={onAction}
+                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-[9px] font-bold uppercase tracking-widest rounded-xl transition-all shadow-sm flex items-center gap-1.5"
+              >
+                <span>Débloquer</span>
+                <ArrowRight className="w-3 h-3" />
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-white border border-gray-100 rounded-3xl overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 flex flex-col h-full font-sans">

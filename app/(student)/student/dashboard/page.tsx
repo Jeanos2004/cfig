@@ -6,6 +6,7 @@ import { auth } from "@/lib/firebase";
 import { User } from "firebase/auth";
 import { studentDb, StudentProfile, AVAILABLE_COURSES, StudentCourse } from "@/lib/studentDb";
 import StudentSidebar from "@/components/student/Sidebar";
+import StudentHeader from "@/components/student/Header";
 import { GraduationCap, Award, BookOpen, MessageSquare, Bell, Search, ChevronRight, ChevronLeft, Calendar as CalendarIcon, CheckCircle, Play } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
@@ -100,12 +101,15 @@ export default function StudentDashboardPage() {
     : "ST";
 
   return (
-    <div className="min-h-screen bg-slate-50 flex font-sans text-gray-800">
+    <div className="min-h-screen bg-slate-50 flex flex-col lg:flex-row font-sans text-gray-800">
       {/* Column 1: Sidebar */}
       <StudentSidebar />
 
-      {/* Column 2: Main Content (Dashboard middle) */}
-      <main className="flex-1 max-h-screen overflow-y-auto p-8 space-y-8">
+      <div className="flex-grow flex flex-col lg:flex-row h-auto lg:h-screen lg:max-h-screen lg:overflow-hidden">
+        {/* Column 2: Main Content (Dashboard middle) */}
+        <div className="flex-grow flex flex-col h-auto lg:h-full lg:overflow-hidden">
+          <StudentHeader title="Tableau de bord" />
+          <main className="flex-grow p-6 lg:p-8 space-y-8 overflow-y-auto h-auto lg:h-full">
         {/* Banner widget */}
         <div className="bg-blue-600 rounded-[2.5rem] p-8 text-white relative overflow-hidden shadow-lg shadow-blue-600/10 flex items-center justify-between">
           <div className="absolute right-0 top-0 w-64 h-64 bg-blue-500/20 rounded-full blur-2xl pointer-events-none" />
@@ -218,36 +222,11 @@ export default function StudentDashboardPage() {
             </div>
           )}
         </div>
-      </main>
+        </main>
+      </div>
 
       {/* Column 3: Calendar & Upcoming Tasks (Right Panel) */}
-      <aside className="w-80 bg-white border-l border-gray-100 p-6 flex flex-col gap-6 max-h-screen overflow-y-auto shrink-0">
-        {/* Right Header: Notification, Message, Profile */}
-        <div className="flex items-center justify-between shrink-0">
-          <div className="flex items-center gap-3">
-            <button className="w-10 h-10 rounded-xl bg-slate-50 flex items-center justify-center text-gray-500 hover:bg-gray-100 transition-colors relative">
-              <MessageSquare className="w-4 h-4" />
-              <span className="absolute top-2 right-2 w-2 h-2 rounded-full bg-blue-500" />
-            </button>
-            <button className="w-10 h-10 rounded-xl bg-slate-50 flex items-center justify-center text-gray-500 hover:bg-gray-100 transition-colors relative">
-              <Bell className="w-4 h-4" />
-              <span className="absolute top-2 right-2 w-2 h-2 rounded-full bg-blue-500" />
-            </button>
-          </div>
-
-          {/* Profile widget */}
-          <div className="flex items-center gap-3">
-            <div className="text-right">
-              <h4 className="font-bold text-xs truncate max-w-[100px] leading-none text-gray-900">{profile?.fullName.split(" ")[0]}</h4>
-              <span className="text-[9px] font-semibold text-gray-400 mt-1 uppercase tracking-wider block leading-none">
-                {profile?.profession === "student" ? "Étudiant" : "Apprenant"}
-              </span>
-            </div>
-            <div className="w-9 h-9 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-xs shadow-inner">
-              {initials}
-            </div>
-          </div>
-        </div>
+      <aside className="w-full lg:w-80 bg-white border-t lg:border-t-0 lg:border-l border-gray-100 p-6 flex flex-col gap-6 overflow-y-auto shrink-0">
 
         {/* Calendar Widget */}
         <div className="bg-slate-50/50 border border-gray-100 rounded-3xl p-5 space-y-4">
@@ -263,7 +242,7 @@ export default function StudentDashboardPage() {
 
           {/* Mini Calendar Grid */}
           <div className="grid grid-cols-7 gap-y-2 text-center text-[9px] font-bold text-gray-400">
-            {["L", "M", "M", "J", "V", "S", "D"].map(d => <span key={d}>{d}</span>)}
+            {["L", "M", "M", "J", "V", "S", "D"].map((d, idx) => <span key={idx}>{d}</span>)}
             
             {/* Mocked days around June 2026 */}
             {[...Array(30)].map((_, i) => {
@@ -337,7 +316,8 @@ export default function StudentDashboardPage() {
             <span className="text-xs font-black text-blue-600">{overallProgress}%</span>
           </div>
         </div>
-      </aside>
+        </aside>
+      </div>
     </div>
   );
 }

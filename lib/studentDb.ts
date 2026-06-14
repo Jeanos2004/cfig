@@ -19,9 +19,10 @@ export interface Lecture {
   id: string;
   title: string;
   duration: string;
-  type: "video" | "text";
+  type: "video" | "text" | "live";
   videoUrl?: string;
   textContent?: string;
+  meetUrl?: string;
   resources?: { name: string; url: string }[];
 }
 
@@ -201,6 +202,14 @@ Ventes N-1 = CALCULATE([Total Ventes], SAMEPERIODLASTYEAR(Calendrier[Date]))</co
             type: "video",
             videoUrl: "https://www.youtube.com/watch?v=T3_97D3NlV0",
             resources: [{ name: "Modèle de calendrier éditorial", url: "#" }]
+          },
+          {
+            id: "comm-l3",
+            title: "1.3 Session Live : Coaching & Questions-Réponses",
+            duration: "En direct",
+            type: "live",
+            meetUrl: "https://meet.google.com/abc-defg-hij",
+            resources: [{ name: "Notes de préparation live", url: "#" }]
           }
         ]
       }
