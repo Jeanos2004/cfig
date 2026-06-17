@@ -78,10 +78,10 @@ export default function PaymentModal({ course, isOpen, onClose, onSuccess }: Pay
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         exit={{ opacity: 0, scale: 0.95 }}
-        className="bg-white w-full max-w-md rounded-3xl shadow-2xl border border-gray-100 overflow-hidden text-gray-800"
+        className="bg-white w-full max-w-md rounded-none shadow-sm border border-gray-200 overflow-hidden text-gray-800"
       >
         {/* Header */}
-        <div className="flex justify-between items-center px-6 py-4 border-b border-gray-100">
+        <div className="flex justify-between items-center px-6 py-4 border-b border-gray-200">
           <div>
             <h3 className="text-sm font-bold uppercase tracking-wider text-[var(--color-primary)]">Finaliser l'inscription</h3>
             <p className="text-[10px] text-gray-400 font-medium uppercase mt-0.5 truncate max-w-[280px]">{course.title}</p>
@@ -102,7 +102,7 @@ export default function PaymentModal({ course, isOpen, onClose, onSuccess }: Pay
                 exit={{ opacity: 0, x: 10 }}
                 className="space-y-4"
               >
-                <div className="p-4 bg-[var(--color-primary)]/5 rounded-2xl flex justify-between items-center">
+                <div className="p-4 bg-[var(--color-primary)]/5 border border-slate-200 rounded-none flex justify-between items-center shadow-sm">
                   <span className="text-xs font-bold uppercase tracking-wider text-[var(--color-primary)]">Montant à régler :</span>
                   <span className="text-lg font-black text-[var(--color-accent)]">{formatPrice(course.price)}</span>
                 </div>
@@ -112,15 +112,15 @@ export default function PaymentModal({ course, isOpen, onClose, onSuccess }: Pay
                   
                   <button
                     onClick={() => setMethod("om")}
-                    className={`w-full p-4 border rounded-2xl flex items-center justify-between transition-all ${
-                      method === "om" ? "border-orange-500 bg-orange-50/20 text-orange-950" : "border-gray-200 hover:border-gray-300"
+                    className={`w-full p-4 border rounded-none flex items-center justify-between transition-all ${
+                      method === "om" ? "border-orange-500 bg-orange-50 text-orange-955 shadow-sm" : "border-gray-300 hover:border-gray-400"
                     }`}
                   >
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-xl bg-orange-500 text-white flex items-center justify-center font-bold">OM</div>
+                      <div className="w-10 h-10 rounded-none border border-orange-600 bg-orange-500 text-white flex items-center justify-center font-bold">OM</div>
                       <div className="text-left">
                         <p className="text-xs font-bold">Orange Money Guinée</p>
-                        <p className="text-[10px] text-gray-400">Paiement mobile instantané</p>
+                        <p className="text-[10px] text-gray-450">Paiement mobile instantané</p>
                       </div>
                     </div>
                     <ChevronRight className="w-4 h-4 text-gray-400" />
@@ -128,15 +128,15 @@ export default function PaymentModal({ course, isOpen, onClose, onSuccess }: Pay
 
                   <button
                     onClick={() => setMethod("momo")}
-                    className={`w-full p-4 border rounded-2xl flex items-center justify-between transition-all ${
-                      method === "momo" ? "border-yellow-500 bg-yellow-50/20 text-yellow-950" : "border-gray-200 hover:border-gray-300"
+                    className={`w-full p-4 border rounded-none flex items-center justify-between transition-all ${
+                      method === "momo" ? "border-yellow-600 bg-yellow-50 text-yellow-955 shadow-sm" : "border-gray-300 hover:border-gray-400"
                     }`}
                   >
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-xl bg-yellow-500 text-yellow-950 flex items-center justify-center font-black">MTN</div>
+                      <div className="w-10 h-10 rounded-none border border-yellow-600 bg-yellow-500 text-yellow-950 flex items-center justify-center font-black">MTN</div>
                       <div className="text-left">
                         <p className="text-xs font-bold">MTN Mobile Money</p>
-                        <p className="text-[10px] text-gray-400">Paiement mobile instantané</p>
+                        <p className="text-[10px] text-gray-455">Paiement mobile instantané</p>
                       </div>
                     </div>
                     <ChevronRight className="w-4 h-4 text-gray-400" />
@@ -144,15 +144,15 @@ export default function PaymentModal({ course, isOpen, onClose, onSuccess }: Pay
 
                   <button
                     onClick={() => setMethod("card")}
-                    className={`w-full p-4 border rounded-2xl flex items-center justify-between transition-all ${
-                      method === "card" ? "border-blue-500 bg-blue-50/20 text-blue-950" : "border-gray-200 hover:border-gray-300"
+                    className={`w-full p-4 border rounded-none flex items-center justify-between transition-all ${
+                      method === "card" ? "border-blue-600 bg-blue-50 text-blue-955 shadow-sm" : "border-gray-300 hover:border-gray-400"
                     }`}
                   >
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-xl bg-blue-600 text-white flex items-center justify-center"><CreditCard className="w-5 h-5" /></div>
+                      <div className="w-10 h-10 rounded-none border border-blue-700 bg-blue-600 text-white flex items-center justify-center"><CreditCard className="w-5 h-5" /></div>
                       <div className="text-left">
                         <p className="text-xs font-bold">Carte Bancaire</p>
-                        <p className="text-[10px] text-gray-400">Visa / Mastercard / UnionPay</p>
+                        <p className="text-[10px] text-gray-450">Visa / Mastercard / UnionPay</p>
                       </div>
                     </div>
                     <ChevronRight className="w-4 h-4 text-gray-400" />
@@ -175,7 +175,7 @@ export default function PaymentModal({ course, isOpen, onClose, onSuccess }: Pay
                       <label className="block text-[10px] font-bold uppercase tracking-wider text-gray-500 mb-1">Nom sur la carte</label>
                       <input
                         type="text" required
-                        className="w-full bg-gray-50 border border-gray-200 px-3.5 py-2.5 text-xs rounded-xl focus:outline-none focus:border-blue-500"
+                        className="w-full bg-gray-50 border border-gray-300 px-3.5 py-2.5 text-xs rounded-none focus:outline-none focus:border-blue-500 shadow-sm"
                         placeholder="Moussa Diallo"
                       />
                     </div>
@@ -183,7 +183,7 @@ export default function PaymentModal({ course, isOpen, onClose, onSuccess }: Pay
                       <label className="block text-[10px] font-bold uppercase tracking-wider text-gray-500 mb-1">Numéro de carte</label>
                       <input
                         type="text" required
-                        className="w-full bg-gray-50 border border-gray-200 px-3.5 py-2.5 text-xs rounded-xl focus:outline-none focus:border-blue-500"
+                        className="w-full bg-gray-50 border border-gray-300 px-3.5 py-2.5 text-xs rounded-none focus:outline-none focus:border-blue-500 shadow-sm"
                         placeholder="4000 1234 5678 9010"
                       />
                     </div>
@@ -192,7 +192,7 @@ export default function PaymentModal({ course, isOpen, onClose, onSuccess }: Pay
                         <label className="block text-[10px] font-bold uppercase tracking-wider text-gray-500 mb-1">Expiration</label>
                         <input
                           type="text" required
-                          className="w-full bg-gray-50 border border-gray-200 px-3.5 py-2.5 text-xs rounded-xl focus:outline-none focus:border-blue-500"
+                          className="w-full bg-gray-50 border border-gray-300 px-3.5 py-2.5 text-xs rounded-none focus:outline-none focus:border-blue-500 shadow-[2px_2px_0px_0px_var(--color-primary)]"
                           placeholder="MM/AA"
                         />
                       </div>
@@ -200,7 +200,7 @@ export default function PaymentModal({ course, isOpen, onClose, onSuccess }: Pay
                         <label className="block text-[10px] font-bold uppercase tracking-wider text-gray-500 mb-1">CVC / CVV</label>
                         <input
                           type="text" required
-                          className="w-full bg-gray-50 border border-gray-200 px-3.5 py-2.5 text-xs rounded-xl focus:outline-none focus:border-blue-500"
+                          className="w-full bg-gray-50 border border-gray-300 px-3.5 py-2.5 text-xs rounded-none focus:outline-none focus:border-blue-500 shadow-[2px_2px_0px_0px_var(--color-primary)]"
                           placeholder="123"
                         />
                       </div>
@@ -208,7 +208,7 @@ export default function PaymentModal({ course, isOpen, onClose, onSuccess }: Pay
                   </div>
                 ) : (
                   <div className="space-y-4">
-                    <div className="p-4 bg-gray-50 border border-gray-100 rounded-2xl flex items-center gap-3">
+                    <div className="p-4 bg-gray-50 border border-gray-200 rounded-none flex items-center gap-3 shadow-sm">
                       <Smartphone className="w-8 h-8 text-[var(--color-primary)]" />
                       <div>
                         <h4 className="text-xs font-bold">Paiement Mobile</h4>
@@ -222,7 +222,7 @@ export default function PaymentModal({ course, isOpen, onClose, onSuccess }: Pay
                         <input
                           type="tel"
                           required
-                          className="w-full bg-gray-50 border border-gray-200 pl-14 pr-4 py-3 text-xs font-bold rounded-xl focus:outline-none focus:border-[var(--color-primary)]"
+                          className="w-full bg-gray-50 border border-gray-300 pl-14 pr-4 py-3 text-xs font-bold rounded-none focus:outline-none focus:border-[var(--color-primary)] shadow-sm"
                           placeholder="622 00 00 00"
                           value={phone}
                           onChange={(e) => setPhone(e.target.value)}
@@ -242,11 +242,11 @@ export default function PaymentModal({ course, isOpen, onClose, onSuccess }: Pay
                 exit={{ opacity: 0, x: 10 }}
                 className="text-center space-y-5 py-6"
               >
-                <div className="w-14 h-14 rounded-full bg-orange-50 text-orange-600 flex items-center justify-center mx-auto animate-pulse">
+                <div className="w-14 h-14 rounded-none bg-orange-50 border border-orange-200 text-orange-600 flex items-center justify-center mx-auto animate-pulse">
                   <RefreshCw className="w-6 h-6 animate-spin" />
                 </div>
                 <div>
-                  <h4 className="text-xs font-bold uppercase tracking-wider text-gray-500">Validation en cours...</h4>
+                  <h4 className="text-xs font-bold uppercase tracking-wider text-gray-550">Validation en cours...</h4>
                   <p className="text-xs text-gray-700 mt-2 max-w-xs mx-auto">
                     Une demande de paiement a été envoyée sur le mobile **+224 {phone}**.
                   </p>
@@ -255,17 +255,17 @@ export default function PaymentModal({ course, isOpen, onClose, onSuccess }: Pay
                   </p>
                 </div>
 
-                <div className="w-4/5 mx-auto bg-gray-50 border border-gray-100 p-4 rounded-2xl">
+                <div className="w-4/5 mx-auto bg-gray-50 border border-gray-200 p-4 rounded-none shadow-sm">
                   <label className="block text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-2">Entrez le code OTP reçu par SMS</label>
                   <input
                     type="text"
                     maxLength={6}
-                    className="w-full bg-white border border-gray-200 px-4 py-2.5 text-center text-sm font-mono tracking-widest font-extrabold focus:outline-none focus:border-[var(--color-primary)] rounded-xl"
+                    className="w-full bg-white border border-gray-300 px-4 py-2.5 text-center text-sm font-mono tracking-widest font-extrabold focus:outline-none focus:border-[var(--color-primary)] rounded-none shadow-sm"
                     placeholder="000000"
                     value={otp}
                     onChange={(e) => setOtp(e.target.value)}
                   />
-                  <div className="text-[10px] text-gray-400 mt-2">
+                  <div className="text-[10px] text-gray-405 mt-2">
                     Le code expire dans <span className="font-bold text-red-500">{countdown}s</span>
                   </div>
                 </div>
@@ -279,7 +279,7 @@ export default function PaymentModal({ course, isOpen, onClose, onSuccess }: Pay
                 animate={{ opacity: 1, scale: 1 }}
                 className="text-center space-y-5 py-8"
               >
-                <div className="w-16 h-16 rounded-full bg-green-50 text-green-600 flex items-center justify-center mx-auto">
+                <div className="w-16 h-16 rounded-none bg-green-50 border border-green-200 text-green-600 flex items-center justify-center mx-auto shadow-sm">
                   <CheckCircle className="w-10 h-10" />
                 </div>
                 <div>
@@ -294,13 +294,13 @@ export default function PaymentModal({ course, isOpen, onClose, onSuccess }: Pay
         </div>
 
         {/* Footer actions */}
-        <div className="px-6 py-4 border-t border-gray-100 bg-gray-50/50 flex items-center justify-between">
+        <div className="px-6 py-4 border-t border-gray-200 bg-gray-50/50 flex items-center justify-between">
           {step === "method" && (
             <>
               <button onClick={onClose} className="px-4 py-2 text-xs font-semibold text-gray-500 hover:text-gray-700">
                 Annuler
               </button>
-              <button onClick={handleNext} className="px-5 py-2.5 bg-[var(--color-primary)] hover:bg-[var(--color-accent)] text-white text-xs font-bold uppercase tracking-wider rounded-xl transition-all shadow-md">
+              <button onClick={handleNext} className="px-5 py-2.5 bg-[var(--color-primary)] hover:bg-[var(--color-accent)] text-white text-xs font-bold uppercase tracking-wider rounded-none border border-[var(--color-primary)] transition-all shadow-sm hover:shadow-md">
                 Continuer
               </button>
             </>
@@ -314,7 +314,7 @@ export default function PaymentModal({ course, isOpen, onClose, onSuccess }: Pay
               <button
                 onClick={handleNext}
                 disabled={loading || (method !== "card" && !phone)}
-                className="px-5 py-2.5 bg-[var(--color-primary)] hover:bg-[var(--color-accent)] text-white text-xs font-bold uppercase tracking-wider rounded-xl transition-all shadow-md disabled:opacity-50 flex items-center gap-1.5"
+                className="px-5 py-2.5 bg-[var(--color-primary)] hover:bg-[var(--color-accent)] text-white text-xs font-bold uppercase tracking-wider rounded-none border border-[var(--color-primary)] transition-all shadow-[2px_2px_0px_0px_var(--color-accent)] disabled:opacity-50 flex items-center gap-1.5"
               >
                 {loading ? (
                   <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
@@ -333,7 +333,7 @@ export default function PaymentModal({ course, isOpen, onClose, onSuccess }: Pay
               <button
                 onClick={handleNext}
                 disabled={loading || !otp}
-                className="px-5 py-2.5 bg-[var(--color-primary)] hover:bg-[var(--color-accent)] text-white text-xs font-bold uppercase tracking-wider rounded-xl transition-all shadow-md disabled:opacity-50 flex items-center gap-1.5"
+                className="px-5 py-2.5 bg-[var(--color-primary)] hover:bg-[var(--color-accent)] text-white text-xs font-bold uppercase tracking-wider rounded-none border border-[var(--color-primary)] transition-all shadow-[2px_2px_0px_0px_var(--color-accent)] disabled:opacity-50 flex items-center gap-1.5"
               >
                 {loading ? (
                   <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
@@ -345,7 +345,7 @@ export default function PaymentModal({ course, isOpen, onClose, onSuccess }: Pay
           )}
 
           {step === "success" && (
-            <button onClick={handleFinish} className="w-full py-3 bg-[var(--color-primary)] hover:bg-[var(--color-accent)] text-white text-xs font-bold uppercase tracking-wider rounded-xl transition-all shadow-md">
+            <button onClick={handleFinish} className="w-full py-3 bg-[var(--color-primary)] hover:bg-[var(--color-accent)] text-white text-xs font-bold uppercase tracking-wider rounded-none border border-[var(--color-primary)] transition-all shadow-sm hover:shadow-md">
               Accéder à mes cours
             </button>
           )}

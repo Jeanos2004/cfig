@@ -130,17 +130,17 @@ export default function StudentCoursesPage() {
           {recentCourse && !searchQuery && (
             <div className="mb-10">
               <h2 className="text-xs font-extrabold uppercase tracking-wider text-gray-400 mb-4">Activité Récente</h2>
-              <div className="bg-white border border-gray-100 rounded-[2.5rem] p-6 shadow-sm hover:shadow-md transition-all duration-300 flex flex-col md:flex-row gap-6 items-stretch">
+              <div className="bg-white border border-gray-200 rounded-none p-6 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 flex flex-col md:flex-row gap-6 items-stretch">
                 {/* Course Thumbnail */}
-                <div className="w-full md:w-80 h-44 relative rounded-[2rem] overflow-hidden bg-slate-50 shrink-0">
+                <div className="w-full md:w-80 h-44 relative rounded-none border border-slate-200 overflow-hidden bg-slate-50 shrink-0 shadow-sm">
                   <Image
                     src={recentCourse.image}
                     alt={recentCourse.title}
                     fill
                     className="object-cover"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
-                  <span className="absolute bottom-4 left-4 bg-white/20 backdrop-blur-md border border-white/30 text-white text-[9px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full">
+                  <div className="absolute inset-0 bg-black/40" />
+                  <span className="absolute bottom-4 left-4 bg-white/20 backdrop-blur-md border border-white/30 text-white text-[9px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-none">
                     {recentCourse.category}
                   </span>
                 </div>
@@ -167,13 +167,13 @@ export default function StudentCoursesPage() {
                     </div>
 
                     <div className="flex flex-col sm:flex-row gap-4 items-center">
-                      <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden flex-1">
-                        <div className="h-full bg-blue-600 rounded-full transition-all duration-500" style={{ width: `${recentProgressPercent}%` }} />
+                      <div className="w-full h-2 bg-slate-100 border border-gray-200 rounded-none overflow-hidden flex-1">
+                        <div className="h-full bg-[var(--color-accent)] rounded-none transition-all duration-500" style={{ width: `${recentProgressPercent}%` }} />
                       </div>
 
                       <button
                         onClick={() => router.push(`/student/courses/${recentCourse!.id}`)}
-                        className="w-full sm:w-auto px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white text-[10px] font-bold uppercase tracking-widest rounded-2xl transition-all shadow-md shadow-blue-600/10 flex items-center justify-center gap-2 shrink-0"
+                        className="w-full sm:w-auto px-6 py-3 bg-[var(--color-primary)] hover:bg-[var(--color-accent)] text-white text-[10px] font-bold uppercase tracking-widest rounded-none border border-[var(--color-primary)] transition-all hover:-translate-y-0.5 active:translate-y-0 flex items-center justify-center gap-2 shrink-0 shadow-sm hover:shadow-md"
                       >
                         <Play className="w-3.5 h-3.5 fill-current" />
                         <span>Continuer l'apprentissage</span>
@@ -208,7 +208,7 @@ export default function StudentCoursesPage() {
           <div>
             <h2 className="text-xs font-extrabold uppercase tracking-wider text-gray-400 mb-4">Formations Disponibles au Catalogue</h2>
             {availableCourses.length === 0 ? (
-              <div className="p-10 bg-white border border-gray-100 rounded-3xl text-center shadow-sm">
+              <div className="p-10 bg-white border border-gray-200 rounded-none text-center shadow-sm">
                 <p className="text-xs text-gray-500 font-semibold">
                   Félicitations ! Vous possédez ou avez débloqué toutes les formations disponibles.
                 </p>

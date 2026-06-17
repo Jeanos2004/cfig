@@ -69,70 +69,72 @@ export default function StudentSidebar() {
 
       {/* Sidebar Panel Container */}
       <div 
-        className={`fixed md:sticky top-0 left-0 z-40 w-64 bg-white text-gray-800 flex flex-col justify-between h-screen border-r border-gray-100 shrink-0 font-sans transition-transform duration-300 md:translate-x-0 ${
+        className={`fixed md:sticky top-0 left-0 z-40 w-64 bg-[var(--color-primary)] text-white flex flex-col justify-between h-screen border-r border-white/5 shrink-0 font-sans transition-transform duration-300 md:translate-x-0 ${
           isOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
         <div className="flex flex-col">
-          {/* Brand Logo - mockup style */}
-          <div className="p-6 flex items-center justify-between gap-3">
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-xl bg-blue-600 flex items-center justify-center text-white font-extrabold text-sm shadow-md shadow-blue-500/20">
-                C
-              </div>
-              <Link href="/" className="text-base font-bold text-gray-900 tracking-tight">
+            {/* Brand Logo - mockup style */}
+          <div className="p-6 flex items-center justify-between gap-3 border-b border-white/10">
+            <Link href="/" className="flex items-center gap-3 group">
+              <img 
+                src="/logo.jpeg" 
+                alt="CFIG Guinée Logo" 
+                className="h-9 w-auto object-contain bg-white rounded-none border border-white/20 shadow-sm transition-all" 
+              />
+              <span className="text-base font-bold text-white tracking-tight group-hover:text-[var(--color-accent)] transition-colors">
                 CFIG Academy
-              </Link>
-            </div>
+              </span>
+            </Link>
             {/* Close button inside sidebar on mobile */}
             <button 
               onClick={() => setIsOpen(false)}
-              className="md:hidden text-gray-400 hover:text-gray-600 p-1"
+              className="md:hidden text-white/80 hover:text-white p-1"
             >
               <X className="w-5 h-5" />
             </button>
           </div>
-
+ 
           {/* Navigation links */}
-          <nav className="px-4 py-4 space-y-1">
+          <nav className="px-4 py-6 space-y-1">
             {navItems.map((item) => {
               const isActive = pathname === item.href || (item.href !== "/student/dashboard" && pathname.startsWith(item.href));
               return (
                 <Link
                   key={item.href}
                   href={item.href}
-                  className={`flex items-center gap-3.5 px-4.5 py-3 text-xs font-bold uppercase tracking-wider rounded-2xl transition-all ${
+                  className={`flex items-center gap-3.5 px-4.5 py-3 text-xs font-bold uppercase tracking-wider transition-all border-l-2 ${
                     isActive
-                      ? "bg-blue-50/70 text-blue-600 shadow-none"
-                      : "text-gray-400 hover:bg-gray-50 hover:text-gray-900"
+                      ? "bg-white/10 text-white border-[var(--color-accent)]"
+                      : "text-slate-350 hover:bg-white/5 hover:text-white border-transparent"
                   }`}
                 >
-                  <item.icon className={`w-4.5 h-4.5 shrink-0 ${isActive ? "text-blue-600" : "text-gray-400"}`} />
+                  <item.icon className={`w-4.5 h-4.5 shrink-0 ${isActive ? "text-white" : "text-slate-400"}`} />
                   <span>{item.name}</span>
                 </Link>
               );
             })}
           </nav>
         </div>
-
+ 
         {/* Bottom Profile Settings & Logout */}
-        <div className="p-4 space-y-1">
+        <div className="p-4 space-y-1 border-t border-white/10">
           <Link
             href="/student/profile"
-            className={`flex items-center gap-3.5 px-4.5 py-3 text-xs font-bold uppercase tracking-wider rounded-2xl transition-all ${
+            className={`flex items-center gap-3.5 px-4.5 py-3 text-xs font-bold uppercase tracking-wider transition-all border-l-2 ${
               pathname === "/student/profile"
-                ? "bg-blue-50/70 text-blue-600"
-                : "text-gray-400 hover:bg-gray-50 hover:text-gray-900"
+                ? "bg-white/10 text-white border-[var(--color-accent)]"
+                : "text-slate-355 hover:bg-white/5 hover:text-white border-transparent"
             }`}
           >
-            <Settings className="w-4.5 h-4.5 shrink-0 text-gray-400" />
+            <Settings className="w-4.5 h-4.5 shrink-0 text-slate-400" />
             <span>Réglages</span>
           </Link>
           <button
             onClick={handleLogout}
-            className="w-full flex items-center gap-3.5 px-4.5 py-3 text-xs font-bold uppercase tracking-wider text-red-500 hover:bg-red-50 hover:text-red-600 rounded-2xl transition-all"
+            className="w-full flex items-center gap-3.5 px-4.5 py-3 text-xs font-bold uppercase tracking-wider text-red-300 hover:bg-red-950/20 hover:text-red-200 transition-all border-l-2 border-transparent"
           >
-            <LogOut className="w-4.5 h-4.5 shrink-0 text-red-400" />
+            <LogOut className="w-4.5 h-4.5 shrink-0 text-red-350" />
             <span>Se déconnecter</span>
           </button>
         </div>

@@ -61,6 +61,32 @@ export default function StudentProfilePage() {
     return () => unsub();
   }, [router]);
 
+  useEffect(() => {
+    const saved = localStorage.getItem("cfig-preferences");
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (parsed.emailAlerts !== undefined) setEmailAlerts(parsed.emailAlerts);
+        if (parsed.smsAlerts !== undefined) setSmsAlerts(parsed.smsAlerts);
+        if (parsed.lowDataMode !== undefined) setLowDataMode(parsed.lowDataMode);
+        if (parsed.themeMode !== undefined) setThemeMode(parsed.themeMode);
+      } catch (e) {
+        console.error(e);
+      }
+    }
+  }, []);
+
+  const savePreferences = () => {
+    localStorage.setItem("cfig-preferences", JSON.stringify({
+      emailAlerts,
+      smsAlerts,
+      lowDataMode,
+      themeMode
+    }));
+    setSuccess(true);
+    setTimeout(() => setSuccess(false), 3000);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return;
@@ -117,21 +143,21 @@ export default function StudentProfilePage() {
             </div>
             
             {/* Quick Status Info */}
-            <div className="flex items-center gap-3 bg-blue-50 text-blue-800 px-4 py-2.5 rounded-2xl border border-blue-100/50">
-              <div className="w-2.5 h-2.5 rounded-full bg-green-500 animate-pulse" />
+            <div className="flex items-center gap-3 bg-blue-50 text-blue-800 px-4 py-2.5 rounded-none border border-blue-200 shadow-sm">
+              <div className="w-2 h-2 rounded-none bg-green-500 animate-pulse" />
               <span className="text-[10px] font-bold uppercase tracking-wider">Compte actif</span>
             </div>
           </div>
 
           <div className="flex flex-col lg:flex-row gap-8 items-stretch">
             {/* Left Nav menu inside settings */}
-            <aside className="w-full lg:w-64 bg-white border border-gray-100 rounded-[2rem] p-5 shrink-0 flex flex-row lg:flex-col gap-2.5 overflow-x-auto lg:overflow-x-visible">
+            <aside className="w-full lg:w-64 bg-white border border-gray-200 rounded-none p-5 shrink-0 flex flex-row lg:flex-col gap-2.5 overflow-x-auto lg:overflow-x-visible shadow-sm">
               <button
                 onClick={() => setActiveTab("profile")}
-                className={`flex items-center gap-3 px-4.5 py-3 text-xs font-bold uppercase tracking-wider rounded-2xl w-full transition-all shrink-0 lg:shrink ${
+                className={`flex items-center gap-3 px-4.5 py-3 text-xs font-bold uppercase tracking-wider rounded-none border-l-2 lg:w-full transition-all shrink-0 ${
                   activeTab === "profile" 
-                    ? "bg-blue-50 text-blue-600" 
-                    : "text-gray-400 hover:bg-gray-50 hover:text-gray-900"
+                    ? "bg-blue-50 text-blue-600 border-blue-600 shadow-sm" 
+                    : "text-gray-400 hover:bg-gray-50 hover:text-gray-900 border-transparent"
                 }`}
               >
                 <UserIcon className="w-4 h-4" />
@@ -140,22 +166,22 @@ export default function StudentProfilePage() {
               
               <button
                 onClick={() => setActiveTab("preferences")}
-                className={`flex items-center gap-3 px-4.5 py-3 text-xs font-bold uppercase tracking-wider rounded-2xl w-full transition-all shrink-0 lg:shrink ${
+                className={`flex items-center gap-3 px-4.5 py-3 text-xs font-bold uppercase tracking-wider rounded-none border-l-2 lg:w-full transition-all shrink-0 ${
                   activeTab === "preferences" 
-                    ? "bg-blue-50 text-blue-600" 
-                    : "text-gray-400 hover:bg-gray-50 hover:text-gray-900"
+                    ? "bg-blue-50 text-blue-600 border-blue-600 shadow-sm" 
+                    : "text-gray-400 hover:bg-gray-50 hover:text-gray-900 border-transparent"
                 }`}
               >
                 <Sliders className="w-4 h-4" />
                 <span>Préférences</span>
               </button>
-
+ 
               <button
                 onClick={() => setActiveTab("security")}
-                className={`flex items-center gap-3 px-4.5 py-3 text-xs font-bold uppercase tracking-wider rounded-2xl w-full transition-all shrink-0 lg:shrink ${
+                className={`flex items-center gap-3 px-4.5 py-3 text-xs font-bold uppercase tracking-wider rounded-none border-l-2 lg:w-full transition-all shrink-0 ${
                   activeTab === "security" 
-                    ? "bg-blue-50 text-blue-600" 
-                    : "text-gray-400 hover:bg-gray-50 hover:text-gray-900"
+                    ? "bg-blue-50 text-blue-600 border-blue-600 shadow-sm" 
+                    : "text-gray-400 hover:bg-gray-50 hover:text-gray-900 border-transparent"
                 }`}
               >
                 <Shield className="w-4 h-4" />
@@ -164,7 +190,7 @@ export default function StudentProfilePage() {
             </aside>
 
             {/* Right Form Card */}
-            <div className="flex-grow bg-white border border-gray-100 rounded-[2.5rem] p-6 md:p-8 shadow-sm flex flex-col justify-between">
+            <div className="flex-grow bg-white border border-gray-200 rounded-none p-6 md:p-8 shadow-sm flex flex-col justify-between">
               
               <AnimatePresence mode="wait">
                 {activeTab === "profile" && (
@@ -181,7 +207,7 @@ export default function StudentProfilePage() {
                     </div>
 
                     {success && (
-                      <div className="p-4 bg-green-50 border border-green-250 text-green-700 text-xs font-bold uppercase tracking-wider rounded-2xl flex items-center gap-2">
+                      <div className="p-4 bg-green-50 border border-green-300 text-green-700 text-xs font-bold uppercase tracking-wider rounded-none flex items-center gap-2 shadow-sm">
                         <CheckCircle className="w-4 h-4" />
                         <span>Profil mis à jour avec succès !</span>
                       </div>
@@ -196,7 +222,7 @@ export default function StudentProfilePage() {
                             <input
                               type="email"
                               disabled
-                              className="w-full bg-slate-100 border border-gray-200 px-11 py-3 text-xs rounded-2xl cursor-not-allowed font-medium"
+                              className="w-full bg-slate-100 border border-gray-300 px-11 py-3 text-xs rounded-none cursor-not-allowed font-medium shadow-sm"
                               value={profile?.email || ""}
                             />
                           </div>
@@ -209,7 +235,7 @@ export default function StudentProfilePage() {
                             <input
                               type="text"
                               required
-                              className="w-full bg-slate-50 border border-gray-250 px-11 py-3 text-xs rounded-2xl focus:outline-none focus:border-blue-600 focus:bg-white transition-all font-medium text-gray-800"
+                              className="w-full bg-slate-50 border border-gray-300 px-11 py-3 text-xs rounded-none focus:outline-none focus:border-[var(--color-accent)] focus:bg-white transition-all font-medium text-gray-800 shadow-sm"
                               value={fullName}
                               onChange={(e) => setFullName(e.target.value)}
                             />
@@ -223,7 +249,7 @@ export default function StudentProfilePage() {
                             <input
                               type="tel"
                               required
-                              className="w-full bg-slate-50 border border-gray-255 pl-14 pr-4 py-3 text-xs font-bold rounded-2xl focus:outline-none focus:border-blue-600 focus:bg-white transition-all text-gray-800"
+                              className="w-full bg-slate-50 border border-gray-300 pl-14 pr-4 py-3 text-xs font-bold rounded-none focus:outline-none focus:border-[var(--color-accent)] focus:bg-white transition-all text-gray-800 shadow-sm"
                               value={phone}
                               onChange={(e) => setPhone(e.target.value)}
                             />
@@ -236,7 +262,7 @@ export default function StudentProfilePage() {
                             <Briefcase className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
                             <select
                               required
-                              className="w-full bg-slate-50 border border-gray-260 pl-11 pr-4 py-3 text-xs rounded-2xl focus:outline-none focus:border-blue-600 focus:bg-white transition-all appearance-none font-medium text-gray-800"
+                              className="w-full bg-slate-50 border border-gray-300 pl-11 pr-4 py-3 text-xs rounded-none focus:outline-none focus:border-[var(--color-accent)] focus:bg-white transition-all appearance-none font-medium text-gray-800 shadow-sm"
                               value={profession}
                               onChange={(e) => setProfession(e.target.value)}
                             >
@@ -253,7 +279,7 @@ export default function StudentProfilePage() {
                         <label className="block text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-2">Mini Biographie / Présentation</label>
                         <textarea
                           placeholder="Parlez-nous brièvement de vous et de vos objectifs de carrière..."
-                          className="w-full bg-slate-50 border border-gray-250 p-4 text-xs rounded-2xl focus:outline-none focus:border-blue-600 focus:bg-white transition-all font-medium text-gray-850 h-24 resize-none"
+                          className="w-full bg-slate-50 border border-gray-300 p-4 text-xs rounded-none focus:outline-none focus:border-[var(--color-accent)] focus:bg-white transition-all font-medium text-gray-850 h-24 resize-none shadow-sm"
                           value={bio}
                           onChange={(e) => setBio(e.target.value)}
                         />
@@ -263,7 +289,7 @@ export default function StudentProfilePage() {
                         <button
                           type="submit"
                           disabled={saving}
-                          className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold uppercase tracking-widest rounded-2xl transition-all shadow-md shadow-blue-600/10 flex items-center gap-2 disabled:opacity-50"
+                          className="px-6 py-3 bg-[var(--color-primary)] hover:bg-[var(--color-accent)] text-white text-xs font-bold uppercase tracking-widest rounded-none transition-all flex items-center gap-2 disabled:opacity-50 border border-[var(--color-primary)] shadow-sm hover:shadow-md"
                         >
                           {saving ? (
                             <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
@@ -294,9 +320,9 @@ export default function StudentProfilePage() {
 
                     <div className="space-y-6">
                       {/* Streaming preference */}
-                      <div className="bg-slate-50/50 border border-slate-100 p-5 rounded-2xl flex items-start justify-between gap-4">
+                      <div className="bg-slate-50/50 border border-slate-300 p-5 rounded-none flex items-start justify-between gap-4 shadow-sm">
                         <div className="flex gap-3">
-                          <div className="w-9 h-9 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
+                          <div className="w-9 h-9 rounded-none border border-blue-200 bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
                             <Wifi className="w-4.5 h-4.5" />
                           </div>
                           <div>
@@ -313,7 +339,7 @@ export default function StudentProfilePage() {
                             onChange={(e) => setLowDataMode(e.target.checked)}
                             className="sr-only peer" 
                           />
-                          <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-600"></div>
+                          <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-none border border-gray-300 peer peer-checked:after:translate-x-4 peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-none after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-600"></div>
                         </label>
                       </div>
 
@@ -356,10 +382,10 @@ export default function StudentProfilePage() {
                         <div className="grid grid-cols-2 gap-4">
                           <button
                             onClick={() => setThemeMode("light")}
-                            className={`p-4 border rounded-2xl text-left transition-all ${
+                            className={`p-4 border rounded-none text-left transition-all ${
                               themeMode === "light" 
-                                ? "border-blue-600 bg-blue-50/20 text-blue-700" 
-                                : "border-gray-200 text-gray-500 hover:bg-slate-50"
+                                ? "border-gray-200 bg-blue-50 text-blue-700 shadow-sm" 
+                                : "border-gray-300 text-gray-500 hover:bg-slate-50 shadow-sm"
                             }`}
                           >
                             <span className="block text-xs font-bold">Thème clair</span>
@@ -368,10 +394,10 @@ export default function StudentProfilePage() {
 
                           <button
                             onClick={() => setThemeMode("dark")}
-                            className={`p-4 border rounded-2xl text-left transition-all ${
+                            className={`p-4 border rounded-none text-left transition-all ${
                               themeMode === "dark" 
-                                ? "border-blue-600 bg-blue-50/20 text-blue-700" 
-                                : "border-gray-200 text-gray-500 hover:bg-slate-50"
+                                ? "border-gray-200 bg-blue-50 text-blue-700 shadow-sm" 
+                                : "border-gray-300 text-gray-500 hover:bg-slate-50 shadow-sm"
                             }`}
                           >
                             <span className="block text-xs font-bold">Thème sombre (Bientôt)</span>
@@ -383,11 +409,8 @@ export default function StudentProfilePage() {
 
                     <div className="pt-6 border-t border-gray-100 flex justify-end">
                       <button
-                        onClick={() => {
-                          setSuccess(true);
-                          setTimeout(() => setSuccess(false), 3000);
-                        }}
-                        className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold uppercase tracking-widest rounded-2xl transition-all shadow-md shadow-blue-600/10 flex items-center gap-2"
+                        onClick={savePreferences}
+                        className="px-6 py-3 bg-[var(--color-primary)] hover:bg-[var(--color-accent)] text-white text-xs font-bold uppercase tracking-widest rounded-none transition-all flex items-center gap-2 border border-[var(--color-primary)] shadow-sm hover:shadow-md"
                       >
                         <Save className="w-4 h-4" />
                         <span>Enregistrer les préférences</span>
@@ -423,7 +446,7 @@ export default function StudentProfilePage() {
                             <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                             <input
                               type={showPassword ? "text" : "password"}
-                              className="w-full bg-slate-50 border border-gray-250 px-11 py-3 text-xs rounded-2xl focus:outline-none focus:border-blue-600 focus:bg-white transition-all font-medium text-gray-800"
+                              className="w-full bg-slate-50 border border-gray-300 px-11 py-3 text-xs rounded-none focus:outline-none focus:border-[var(--color-accent)] focus:bg-white transition-all font-medium text-gray-800 shadow-sm"
                               value={currentPassword}
                               onChange={(e) => setCurrentPassword(e.target.value)}
                             />
@@ -443,7 +466,7 @@ export default function StudentProfilePage() {
                             <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                             <input
                               type={showPassword ? "text" : "password"}
-                              className="w-full bg-slate-50 border border-gray-250 px-11 py-3 text-xs rounded-2xl focus:outline-none focus:border-blue-600 focus:bg-white transition-all font-medium text-gray-850"
+                              className="w-full bg-slate-50 border border-gray-300 px-11 py-3 text-xs rounded-none focus:outline-none focus:border-[var(--color-accent)] focus:bg-white transition-all font-medium text-gray-850 shadow-sm"
                               value={newPassword}
                               onChange={(e) => setNewPassword(e.target.value)}
                             />
@@ -451,7 +474,7 @@ export default function StudentProfilePage() {
                         </div>
                       </div>
 
-                      <div className="bg-slate-50/50 border border-slate-100 p-5 rounded-2xl space-y-3">
+                      <div className="bg-slate-50/50 border border-slate-300 p-5 rounded-none shadow-sm space-y-3">
                         <h4 className="text-xs font-bold text-gray-800 flex items-center gap-2">
                           <Globe className="w-4 h-4 text-blue-600" />
                           Appareil connecté actif
@@ -459,7 +482,7 @@ export default function StudentProfilePage() {
                         <div className="flex justify-between items-center text-[10px] text-gray-400 font-semibold uppercase tracking-wider">
                           <span>Navigateur : Chrome (Windows)</span>
                           <span className="text-green-600 font-extrabold flex items-center gap-1">
-                            <div className="w-1.5 h-1.5 rounded-full bg-green-500" />
+                            <div className="w-1.5 h-1.5 rounded-none bg-green-500" />
                             Cette session
                           </span>
                         </div>
@@ -468,7 +491,7 @@ export default function StudentProfilePage() {
                       <div className="pt-6 border-t border-gray-100 flex justify-end">
                         <button
                           type="submit"
-                          className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold uppercase tracking-widest rounded-2xl transition-all shadow-md shadow-blue-600/10 flex items-center gap-2"
+                          className="px-6 py-3 bg-[var(--color-primary)] hover:bg-[var(--color-accent)] text-white text-xs font-bold uppercase tracking-widest rounded-none transition-all flex items-center gap-2 border border-[var(--color-primary)] shadow-sm hover:shadow-md"
                         >
                           <Shield className="w-4 h-4" />
                           <span>Mettre à jour la sécurité</span>

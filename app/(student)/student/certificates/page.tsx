@@ -85,7 +85,7 @@ export default function StudentCertificatesPage() {
           </div>
 
           {completedCourses.length === 0 ? (
-            <div className="bg-white border border-gray-100 p-12 rounded-[2.5rem] text-center w-full flex flex-col items-center shadow-sm mt-8">
+            <div className="bg-white border border-gray-200 p-12 rounded-none text-center w-full flex flex-col items-center shadow-sm mt-8">
               <Award className="w-16 h-16 text-gray-200 mb-4" />
               <h3 className="text-sm font-bold text-gray-650">Aucun certificat disponible pour le moment</h3>
               <p className="text-xs text-gray-400 mt-2 leading-relaxed max-w-md">
@@ -99,7 +99,7 @@ export default function StudentCertificatesPage() {
                     const total = getTotalCount(c);
                     const percent = Math.round((completed / total) * 100);
                     return (
-                      <div key={c.id} className="p-4 bg-slate-50/50 rounded-2xl flex items-center justify-between border border-slate-100">
+                      <div key={c.id} className="p-4 bg-slate-50/50 rounded-none flex items-center justify-between border border-slate-200 shadow-sm">
                         <div>
                           <h4 className="text-xs font-bold text-gray-700">{c.title}</h4>
                           <p className="text-[10px] text-gray-400 mt-0.5">{completed} sur {total} leçons complétées</p>
@@ -114,9 +114,9 @@ export default function StudentCertificatesPage() {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {completedCourses.map((course) => (
-                <div key={course.id} className="bg-white border border-gray-100 rounded-[2rem] p-6 shadow-sm hover:shadow-md transition-all duration-300 flex flex-col justify-between">
+                <div key={course.id} className="bg-white border border-gray-200 rounded-none p-6 shadow-sm hover:shadow-md transition-all duration-300 flex flex-col justify-between">
                   <div>
-                    <div className="w-10 h-10 rounded-xl bg-green-50 text-green-600 flex items-center justify-center mb-4">
+                    <div className="w-10 h-10 rounded-none border border-green-200 bg-green-50 text-green-600 flex items-center justify-center mb-4">
                       <ShieldCheck className="w-5 h-5" />
                     </div>
                     <h3 className="font-bold text-[10px] text-blue-600 uppercase tracking-widest">{course.category}</h3>
@@ -127,7 +127,7 @@ export default function StudentCertificatesPage() {
                   <div className="mt-6 grid grid-cols-2 gap-2">
                     <button
                       onClick={() => setSelectedCertCourse(course)}
-                      className="py-2.5 border border-gray-250 text-gray-600 hover:bg-slate-50 text-[10px] font-bold uppercase tracking-widest rounded-xl transition-all flex items-center justify-center gap-1.5"
+                      className="py-2.5 border border-gray-200 text-gray-600 hover:bg-slate-50 text-[10px] font-bold uppercase tracking-widest rounded-none transition-all flex items-center justify-center gap-1.5 shadow-sm"
                     >
                       <Eye className="w-3.5 h-3.5" />
                       <span>Aperçu</span>
@@ -138,7 +138,7 @@ export default function StudentCertificatesPage() {
                         e.preventDefault();
                         alert("Téléchargement du certificat PDF en cours...");
                       }}
-                      className="py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-[10px] font-bold uppercase tracking-widest rounded-xl transition-all shadow-sm flex items-center justify-center gap-1.5"
+                      className="py-2.5 bg-[var(--color-primary)] hover:bg-[var(--color-accent)] text-white text-[10px] font-bold uppercase tracking-widest rounded-none transition-all flex items-center justify-center gap-1.5 shadow-sm"
                     >
                       <Download className="w-3.5 h-3.5" />
                       <span>Télécharger</span>
@@ -166,7 +166,7 @@ export default function StudentCertificatesPage() {
               animate={{ scale: 1 }}
               exit={{ scale: 0.95 }}
               onClick={(e) => e.stopPropagation()}
-              className="bg-white max-w-3xl w-full p-8 md:p-12 rounded-3xl shadow-2xl border border-gray-200 relative overflow-hidden text-center text-gray-950 font-serif"
+              className="bg-white max-w-3xl w-full p-8 md:p-12 rounded-none shadow-sm border border-gray-200 relative overflow-hidden text-center text-gray-950 font-sans"
             >
               <button
                 onClick={() => setSelectedCertCourse(null)}
@@ -176,12 +176,15 @@ export default function StudentCertificatesPage() {
               </button>
 
               {/* Decorative Frame */}
-              <div className="absolute inset-4 border-4 border-double border-blue-600/20 pointer-events-none" />
+              <div className="absolute inset-4 border-4 border-double border-[var(--color-accent)] pointer-events-none" />
 
               <div className="relative z-10 space-y-6">
-                <span className="text-xs uppercase tracking-[0.25em] font-sans font-bold text-amber-600">Certificat de Réussite</span>
+                <div className="flex justify-center mb-2">
+                  <img src="/logo.jpeg" alt="CFIG Guinée Logo" className="h-12 w-auto object-contain bg-white rounded-none border border-gray-200 shadow-sm" />
+                </div>
+                <span className="text-xs uppercase tracking-[0.25em] font-sans font-bold text-[var(--color-accent)] block">Certificat de Réussite</span>
                 
-                <h2 className="text-2xl md:text-3xl font-black text-blue-900 font-heading">
+                <h2 className="text-2xl md:text-3xl font-black text-[var(--color-primary)] font-heading">
                   CFIG GUINÉE
                 </h2>
                 
@@ -213,8 +216,8 @@ export default function StudentCertificatesPage() {
                   </div>
 
                   <div className="text-right">
-                    <p className="text-xs font-bold text-gray-800">Direction Générale CFIG</p>
-                    <div className="mt-2 h-10 w-24 border border-dashed border-gray-200 rounded flex items-center justify-center text-[8px] text-gray-300 italic select-none">
+                    <p className="text-xs font-bold text-gray-850">Direction Générale CFIG</p>
+                    <div className="mt-2 h-10 w-24 border border-dashed border-gray-300 rounded-none flex items-center justify-center text-[8px] text-gray-400 italic select-none bg-slate-50">
                       Signature & Cachet
                     </div>
                   </div>

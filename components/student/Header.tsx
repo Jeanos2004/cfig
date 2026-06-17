@@ -68,7 +68,7 @@ export default function StudentHeader({
       time: "Dans 4 h",
       unread: true,
       icon: Calendar,
-      color: "text-amber-600 bg-amber-50"
+      color: "text-[var(--color-accent)] bg-blue-50 border border-blue-100"
     },
     {
       id: 2,
@@ -127,15 +127,24 @@ export default function StudentHeader({
   return (
     <header className="h-20 bg-white border-b border-gray-100 flex items-center justify-between px-6 md:px-8 shrink-0 relative z-30 font-sans">
       
-      {/* Mobile Hamburger & Title */}
+      {/* Mobile Hamburger, Logo & Title */}
       <div className="flex items-center gap-3">
         <button 
           onClick={triggerSidebar}
-          className="md:hidden p-2 bg-slate-50 hover:bg-slate-100 border border-gray-200/80 rounded-xl text-gray-700 hover:text-gray-900 transition-colors"
+          className="md:hidden p-2 bg-slate-50 hover:bg-slate-100 border border-gray-200/80 rounded-none text-gray-700 hover:text-gray-900 transition-colors"
           aria-label="Toggle Navigation"
         >
           <Menu className="w-5 h-5" />
         </button>
+
+        {/* Mobile Logo */}
+        <div className="md:hidden flex items-center shrink-0">
+          <img 
+            src="/logo.jpeg" 
+            alt="CFIG Guinée Logo" 
+            className="h-8 w-auto object-contain bg-white rounded-none border border-gray-200 shadow-sm" 
+          />
+        </div>
 
         {!showSearch && title && (
           <h1 className="text-xs font-bold text-gray-900 uppercase tracking-wider hidden sm:block">
@@ -151,7 +160,7 @@ export default function StudentHeader({
           <input
             type="text"
             placeholder="Rechercher une formation, une catégorie..."
-            className="w-full bg-slate-50 border border-gray-200/80 rounded-2xl pl-11 pr-4 py-2.5 text-xs focus:outline-none focus:border-blue-600 focus:bg-white transition-all font-medium text-gray-800"
+            className="w-full bg-slate-50 border border-gray-200 pl-11 pr-4 py-2.5 text-xs focus:outline-none focus:border-blue-600 focus:bg-white transition-all font-medium text-gray-800 rounded-none"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
@@ -168,29 +177,29 @@ export default function StudentHeader({
               setMessagesOpen(!messagesOpen);
               setNotifsOpen(false);
             }}
-            className={`w-10 h-10 rounded-xl flex items-center justify-center transition-colors relative ${
-              messagesOpen ? "bg-blue-50 text-blue-600" : "bg-slate-50 text-gray-500 hover:bg-gray-100"
+            className={`w-10 h-10 rounded-none flex items-center justify-center transition-colors relative border border-transparent ${
+              messagesOpen ? "bg-blue-50 text-blue-600 border-gray-200" : "bg-slate-50 text-gray-500 hover:bg-gray-100"
             }`}
           >
             <MessageSquare className="w-4.5 h-4.5" />
-            <span className="absolute top-2 right-2 w-2 h-2 rounded-full bg-blue-500" />
+            <span className="absolute top-2.5 right-2.5 w-1.5 h-1.5 bg-blue-500" />
           </button>
-
+ 
           {messagesOpen && (
-            <div className="absolute right-0 top-12 w-80 bg-white border border-gray-100 rounded-3xl shadow-xl p-4 space-y-3 mt-1.5 animate-in fade-in slide-in-from-top-2 duration-200">
+            <div className="absolute right-0 top-12 w-80 bg-white border border-gray-200 shadow-xl p-4 space-y-3 mt-1.5 animate-in fade-in slide-in-from-top-2 duration-200 rounded-none">
               <div className="flex items-center justify-between border-b border-gray-50 pb-2">
                 <h3 className="text-xs font-black text-gray-900 uppercase tracking-wider">Messages récents</h3>
-                <span className="text-[9px] font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-md">1 non lu</span>
+                <span className="text-[9px] font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-none border border-blue-100">1 non lu</span>
               </div>
-
+ 
               <div className="divide-y divide-gray-50 max-h-60 overflow-y-auto pr-1">
                 {mockMessages.map((msg) => (
                   <div 
                     key={msg.id} 
-                    className="py-3 flex gap-3 cursor-pointer hover:bg-slate-50/50 rounded-xl px-1.5 transition-colors"
+                    className="py-3 flex gap-3 cursor-pointer hover:bg-slate-50/50 px-1.5 transition-colors rounded-none"
                     onClick={() => router.push("/student/dashboard")} // Mock nav
                   >
-                    <div className="w-8 h-8 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-[10px] shrink-0">
+                    <div className="w-8 h-8 bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-[10px] shrink-0 rounded-none border border-blue-100">
                       {msg.initials}
                     </div>
                     <div className="min-w-0 flex-grow">
@@ -203,7 +212,7 @@ export default function StudentHeader({
                       </p>
                     </div>
                     {msg.unread && (
-                      <div className="w-1.5 h-1.5 rounded-full bg-blue-500 self-center shrink-0" />
+                      <div className="w-1.5 h-1.5 bg-blue-500 self-center shrink-0" />
                     )}
                   </div>
                 ))}
@@ -211,7 +220,7 @@ export default function StudentHeader({
             </div>
           )}
         </div>
-
+ 
         {/* Notifications Dropdown */}
         <div className="relative" ref={notifsRef}>
           <button 
@@ -219,34 +228,34 @@ export default function StudentHeader({
               setNotifsOpen(!notifsOpen);
               setMessagesOpen(false);
             }}
-            className={`w-10 h-10 rounded-xl flex items-center justify-center transition-colors relative ${
-              notifsOpen ? "bg-blue-50 text-blue-600" : "bg-slate-50 text-gray-500 hover:bg-gray-100"
+            className={`w-10 h-10 rounded-none flex items-center justify-center transition-colors relative border border-transparent ${
+              notifsOpen ? "bg-blue-50 text-blue-600 border-gray-200" : "bg-slate-50 text-gray-500 hover:bg-gray-100"
             }`}
           >
             <Bell className="w-4.5 h-4.5" />
-            <span className="absolute top-2 right-2 w-2 h-2 rounded-full bg-blue-500" />
+            <span className="absolute top-2.5 right-2.5 w-1.5 h-1.5 bg-blue-500" />
           </button>
-
+ 
           {notifsOpen && (
-            <div className="absolute right-0 top-12 w-80 bg-white border border-gray-100 rounded-3xl shadow-xl p-4 space-y-3 mt-1.5 animate-in fade-in slide-in-from-top-2 duration-200">
+            <div className="absolute right-0 top-12 w-80 bg-white border border-gray-200 shadow-xl p-4 space-y-3 mt-1.5 animate-in fade-in slide-in-from-top-2 duration-200 rounded-none">
               <div className="flex items-center justify-between border-b border-gray-50 pb-2">
                 <h3 className="text-xs font-black text-gray-900 uppercase tracking-wider">Notifications</h3>
                 <button 
                   onClick={() => alert("Toutes les notifications marquées comme lues")}
-                  className="text-[9px] font-bold text-gray-400 hover:text-blue-600 transition-colors flex items-center gap-1"
+                  className="text-[9px] font-bold text-gray-400 hover:text-blue-600 transition-colors flex items-center gap-1 rounded-none"
                 >
                   <Check className="w-3 h-3" />
                   Tout lire
                 </button>
               </div>
-
+ 
               <div className="divide-y divide-gray-50 max-h-60 overflow-y-auto pr-1">
                 {mockNotifications.map((notif) => (
                   <div 
                     key={notif.id} 
-                    className="py-3 flex gap-3 cursor-pointer hover:bg-slate-50/50 rounded-xl px-1.5 transition-colors"
+                    className="py-3 flex gap-3 cursor-pointer hover:bg-slate-50/50 px-1.5 transition-colors rounded-none"
                   >
-                    <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${notif.color}`}>
+                    <div className={`w-8 h-8 flex items-center justify-center shrink-0 rounded-none ${notif.color}`}>
                       <notif.icon className="w-4.5 h-4.5" />
                     </div>
                     <div className="min-w-0 flex-grow">
@@ -264,18 +273,18 @@ export default function StudentHeader({
             </div>
           )}
         </div>
-
+ 
         {/* Profile Widget */}
         <div className="flex items-center gap-3 border-l border-gray-100 pl-4 sm:pl-6">
           <div className="text-right hidden sm:block">
-            <h4 className="font-bold text-xs text-gray-900 leading-none">{profile?.fullName.split(" ")[0]}</h4>
+            <h4 className="font-bold text-xs text-gray-900 leading-none">{profile?.fullName ? profile.fullName.split(" ")[0] : "Apprenant"}</h4>
             <span className="text-[9px] font-semibold text-gray-400 mt-1 uppercase tracking-wider block leading-none">
               {profile?.profession === "student" ? "Étudiant" : "Apprenant"}
             </span>
           </div>
           <div 
             onClick={() => router.push("/student/profile")}
-            className="w-9 h-9 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-xs shadow-inner cursor-pointer hover:scale-105 transition-transform"
+            className="w-9 h-9 bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-xs shadow-inner cursor-pointer hover:scale-105 transition-transform rounded-none border border-blue-150"
           >
             {initials}
           </div>

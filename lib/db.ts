@@ -8,6 +8,7 @@ import {
   setDoc,
   deleteDoc
 } from "firebase/firestore";
+import { StudentProfile } from "./studentDb";
 
 // === TYPES ===
 
@@ -453,6 +454,37 @@ export const db = {
     } catch (error) {
       console.error("Error saving gallery to Firestore:", error);
       throw error;
+    }
+  },
+  
+  // Students
+  async getStudents(): Promise<StudentProfile[]> {
+    try {
+      const snapshot = await getDocs(collection(firestore, "students"));
+      const list: StudentProfile[] = [];
+      snapshot.forEach((d) => {
+        list.push(d.data() as StudentProfile);
+      });
+      return list.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
+    } catch (error) {
+      console.error("Error fetching students from Firestore:", error);
+    }
+    return [];
+  },
+
+  async enrollStudent(uid: string, courseId: string): Promise<void> {
+    try {
+      const docRef = doc(firestore, "students", uid);
+      const snap = await getDoc(docRef);
+      if (snap.exists()) {
+        const profile = snap.data() as StudentProfile;
+        if (!profile.enrolledCourses.includes(courseId)) {
+          profile.enrolledCourses.push(courseId);
+          await setDoc(docRef, profile);
+        }
+      }
+    } catch (error) {
+      console.error("Error enrolling student in Firestore:", error);
     }
   },
 

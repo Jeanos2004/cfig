@@ -26,7 +26,14 @@ import {
   Award,
   Settings,
   Image as ImageIcon,
-  Video
+  Video,
+  ClipboardList,
+  Newspaper,
+  HeartHandshake,
+  ShieldCheck,
+  TrendingUp,
+  Clock,
+  Sparkles
 } from "lucide-react";
 import { MediaUploader } from "@/components/admin/MediaUploader";
 import { MultiMediaUploader, MediaItem } from "@/components/admin/MultiMediaUploader";
@@ -34,6 +41,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { db, CategorieFormations, ModuleItem, Article, InscriptionRequest, ContactMessage, Testimonial, SiteSettings, AdminUser, GalleryItem } from "@/lib/db";
 import { auth } from "@/lib/firebase";
 import { signInWithEmailAndPassword, signOut, onAuthStateChanged, createUserWithEmailAndPassword } from "firebase/auth";
+import { StudentProfile, AVAILABLE_COURSES } from "@/lib/studentDb";
 
 // ============================================================
 // GALLERY TITLE FOLDER — collapsible folder-style section by title
@@ -169,7 +177,7 @@ export default function AdminPage() {
   const [authError, setAuthError] = useState("");
   
   // === ACTIVE TAB STATE ===
-  const [activeTab, setActiveTab] = useState<"overview" | "inscriptions" | "formations" | "actualites" | "testimonials" | "galerie" | "messages" | "settings" | "users">("overview");
+  const [activeTab, setActiveTab] = useState<"overview" | "inscriptions" | "formations" | "actualites" | "testimonials" | "galerie" | "messages" | "settings" | "users" | "students">("overview");
 
   // === DATA STATES ===
   const [formations, setFormations] = useState<CategorieFormations[]>([]);
@@ -178,6 +186,9 @@ export default function AdminPage() {
   const [messages, setMessages] = useState<ContactMessage[]>([]);
   const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
   const [gallery, setGallery] = useState<GalleryItem[]>([]);
+  const [students, setStudents] = useState<StudentProfile[]>([]);
+  const [selectedStudent, setSelectedStudent] = useState<StudentProfile | null>(null);
+  const [studentSearchQuery, setStudentSearchQuery] = useState("");
   
   // Settings & Admins states
   const [settings, setSettings] = useState<SiteSettings | null>(null);
@@ -264,25 +275,44 @@ export default function AdminPage() {
   const [selectedRequest, setSelectedRequest] = useState<InscriptionRequest | null>(null);
   const [selectedMessage, setSelectedMessage] = useState<ContactMessage | null>(null);
 
-  // === INITIALIZATION & LOAD ===
-  useEffect(() => {
-    const initAndLoad = async () => {
-      await db.init();
-      setFormations(await db.getFormations());
-      setArticles(await db.getArticles());
-      setInscriptions(await db.getInscriptions());
-      setMessages(await db.getMessages());
-      setTestimonials(await db.getTestimonials());
-      setGallery(await db.getGallery());
-      
-      const siteSettings = await db.getSettings();
-      setSettings(siteSettings);
+  // === DB MUTATION WRAPPERS ===
+  const refreshAllData = async () => {
+    setFormations(await db.getFormations());
+    setArticles(await db.getArticles());
+    setInscriptions(await db.getInscriptions());
+    setMessages(await db.getMessages());
+    setTestimonials(await db.getTestimonials());
+    setGallery(await db.getGallery());
+    setStudents(await db.getStudents());
+    
+    const siteSettings = await db.getSettings();
+    setSettings(siteSettings);
+    if (siteSettings) {
       setEditApprenantsForme(siteSettings.apprenantsForme);
       setEditTotalHeuresFormation(siteSettings.totalHeuresFormation);
       setEditTauxSatisfaction(siteSettings.tauxSatisfaction);
       setEditAnneesExperience(siteSettings.anneesExperience);
+    }
+    setAdmins(await db.getAdmins());
+  };
 
-      setAdmins(await db.getAdmins());
+  // === INITIALIZATION & LOAD ===
+  useEffect(() => {
+    const initAndLoad = async () => {
+      await db.init();
+      // Load public site settings initially
+      try {
+        const siteSettings = await db.getSettings();
+        setSettings(siteSettings);
+        if (siteSettings) {
+          setEditApprenantsForme(siteSettings.apprenantsForme);
+          setEditTotalHeuresFormation(siteSettings.totalHeuresFormation);
+          setEditTauxSatisfaction(siteSettings.tauxSatisfaction);
+          setEditAnneesExperience(siteSettings.anneesExperience);
+        }
+      } catch (error) {
+        console.error("Error loading settings:", error);
+      }
     };
     initAndLoad();
 
@@ -292,8 +322,8 @@ export default function AdminPage() {
         setIsLoggedIn(true);
         if (user.email) {
           await db.syncAdmin(user.uid, user.email);
-          setAdmins(await db.getAdmins());
         }
+        await refreshAllData();
       } else {
         setIsLoggedIn(false);
       }
@@ -312,7 +342,6 @@ export default function AdminPage() {
       const user = userCredential.user;
       if (user.email) {
         await db.syncAdmin(user.uid, user.email);
-        setAdmins(await db.getAdmins());
       }
       setIsLoggedIn(true);
     } catch (error: any) {
@@ -342,20 +371,6 @@ export default function AdminPage() {
     }
   };
 
-  // === DB MUTATION WRAPPERS ===
-  const refreshAllData = async () => {
-    setFormations(await db.getFormations());
-    setArticles(await db.getArticles());
-    setInscriptions(await db.getInscriptions());
-    setMessages(await db.getMessages());
-    setTestimonials(await db.getTestimonials());
-    setGallery(await db.getGallery());
-    
-    const siteSettings = await db.getSettings();
-    setSettings(siteSettings);
-    setAdmins(await db.getAdmins());
-  };
-
   const handleSaveSettings = async (e: React.FormEvent) => {
     e.preventDefault();
     setSettingsSuccessMsg("");
@@ -369,7 +384,7 @@ export default function AdminPage() {
       };
       await db.saveSettings(updatedSettings);
       setSettings(updatedSettings);
-      setSettingsSuccessMsg("ParamÃ¨tres enregistrés avec succÃ¨s !");
+      setSettingsSuccessMsg("Paramètres enregistrés avec succès !");
     } catch (error) {
       console.error("Error saving settings:", error);
       setSettingsErrorMsg("Une erreur est survenue lors de l'enregistrement.");
@@ -382,7 +397,7 @@ export default function AdminPage() {
     setUserErrorMsg("");
     if (!newAdminEmail || !newAdminPassword) return;
     if (newAdminPassword.length < 6) {
-      setUserErrorMsg("Le mot de passe doit faire au moins 6 caractÃ¨res.");
+      setUserErrorMsg("Le mot de passe doit faire au moins 6 caractères.");
       return;
     }
 
@@ -401,12 +416,12 @@ export default function AdminPage() {
       
       setNewAdminEmail("");
       setNewAdminPassword("");
-      setUserSuccessMsg("Compte administrateur créé avec succÃ¨s !");
+      setUserSuccessMsg("Compte administrateur créé avec succès !");
     } catch (error: any) {
       console.error("Error creating admin:", error);
       let errorMsg = "Erreur lors de la création du compte.";
       if (error.code === "auth/email-already-in-use") {
-        errorMsg = "Cette adresse email est déjÃ  utilisée.";
+        errorMsg = "Cette adresse email est déjà utilisée.";
       } else if (error.code === "auth/invalid-email") {
         errorMsg = "Adresse email invalide.";
       } else if (error.code === "auth/weak-password") {
@@ -434,6 +449,20 @@ export default function AdminPage() {
       setAdmins(await db.getAdmins());
     } catch (error) {
       console.error("Error updating admin status:", error);
+    }
+  };
+
+  const handleEnrollStudent = async (studentUid: string, courseId: string) => {
+    try {
+      await db.enrollStudent(studentUid, courseId);
+      const updatedStudents = await db.getStudents();
+      setStudents(updatedStudents);
+      const updatedProfile = updatedStudents.find(s => s.uid === studentUid);
+      if (updatedProfile) {
+        setSelectedStudent(updatedProfile);
+      }
+    } catch (error) {
+      console.error("Error enrolling student in course:", error);
     }
   };
 
@@ -892,49 +921,84 @@ export default function AdminPage() {
       <aside className="w-64 h-full bg-[var(--color-primary)] text-white flex flex-col flex-shrink-0 z-20 sticky top-0">
         {/* Brand header */}
         <div className="p-6 border-b border-white/10 flex items-center gap-3">
-          <img src="/logo.jpeg" alt="CFIG Guinée Logo" className="h-10 w-auto object-contain bg-white rounded-sm" />
+          <img src="/logo.jpeg" alt="CFIG Guinée Logo" className="h-10 w-auto object-contain bg-white rounded-none border border-white/20 shadow-sm" />
           <div>
-            <h1 className="font-heading font-bold text-sm tracking-wide leading-none">CFIG Guinée</h1>
-            <span className="text-[10px] text-gray-400 uppercase tracking-widest font-bold">Dashboard</span>
+            <h1 className="font-heading font-bold text-sm tracking-wide leading-none text-white">CFIG Guinée</h1>
+            <span className="text-[9px] text-[var(--color-light)] uppercase tracking-widest font-black mt-1.5 block">Console Admin</span>
           </div>
         </div>
 
         {/* Navigation list */}
-        <nav className="flex-grow p-4 space-y-1.5">
+        <nav className="flex-grow p-4 space-y-5 overflow-y-auto">
           {[
-            { id: "overview", label: "Vue d'ensemble", icon: <LayoutDashboard className="w-4 h-4" /> },
-            { id: "inscriptions", label: "Inscriptions & Devis", icon: <GraduationCap className="w-4 h-4" />, badge: pendingInscriptionsCount },
-            { id: "formations", label: "Formations & Modules", icon: <BookOpen className="w-4 h-4" /> },
-            { id: "actualites", label: "Blog & Actualités", icon: <FileText className="w-4 h-4" /> },
-            { id: "testimonials", label: "Témoignages Alumni", icon: <MessageSquare className="w-4 h-4" /> },
-            { id: "galerie", label: "Galerie Médias", icon: <ImageIcon className="w-4 h-4" /> },
-            { id: "messages", label: "Messages de Contact", icon: <Mail className="w-4 h-4" />, badge: unreadMessagesCount },
-            { id: "users", label: "Utilisateurs Admin", icon: <Users className="w-4 h-4" /> },
-            { id: "settings", label: "ParamÃ¨tres", icon: <Settings className="w-4 h-4" /> }
-          ].map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => {
-                setActiveTab(tab.id as any);
-                setSearchQuery("");
-                setStatusFilter("Tous");
-              }}
-              className={`w-full flex items-center justify-between px-4 py-3 text-xs font-bold uppercase tracking-wider transition-colors ${
-                activeTab === tab.id
-                  ? "bg-[var(--color-accent)] text-white"
-                  : "text-gray-300 hover:bg-white/5 hover:text-white"
-              }`}
-            >
-              <div className="flex items-center gap-3">
-                {tab.icon}
-                {tab.label}
+            {
+              title: "Pilotage",
+              items: [
+                { id: "overview", label: "Vue d'ensemble", icon: <LayoutDashboard className="w-4 h-4" /> },
+                { id: "inscriptions", label: "Inscriptions & Devis", icon: <ClipboardList className="w-4 h-4" />, badge: pendingInscriptionsCount },
+                { id: "students", label: "Gestion des Étudiants", icon: <GraduationCap className="w-4 h-4" /> },
+              ]
+            },
+            {
+              title: "Contenu & Offres",
+              items: [
+                { id: "formations", label: "Formations & Modules", icon: <BookOpen className="w-4 h-4" /> },
+                { id: "actualites", label: "Blog & Actualités", icon: <Newspaper className="w-4 h-4" /> },
+                { id: "testimonials", label: "Témoignages Alumni", icon: <HeartHandshake className="w-4 h-4" /> },
+                { id: "galerie", label: "Galerie Médias", icon: <ImageIcon className="w-4 h-4" /> },
+              ]
+            },
+            {
+              title: "Communication",
+              items: [
+                { id: "messages", label: "Messages de Contact", icon: <Mail className="w-4 h-4" />, badge: unreadMessagesCount },
+              ]
+            },
+            {
+              title: "Configuration",
+              items: [
+                { id: "users", label: "Utilisateurs Admin", icon: <ShieldCheck className="w-4 h-4" /> },
+                { id: "settings", label: "Paramètres", icon: <Settings className="w-4 h-4" /> }
+              ]
+            }
+          ].map((group, gIdx) => (
+            <div key={gIdx} className="space-y-1.5">
+              <span className="block px-3 text-[9px] font-extrabold uppercase tracking-widest text-gray-500">
+                {group.title}
+              </span>
+              <div className="space-y-0.5">
+                {group.items.map((tab) => {
+                  const isActive = activeTab === tab.id;
+                  return (
+                    <button
+                      key={tab.id}
+                      onClick={() => {
+                        setActiveTab(tab.id as any);
+                        setSearchQuery("");
+                        setStatusFilter("Tous");
+                      }}
+                      className={`w-full flex items-center justify-between px-3 py-2.5 text-xs font-bold uppercase tracking-wider transition-all duration-150 border-l-2 ${
+                        isActive
+                          ? "bg-white/10 text-white border-[var(--color-accent)]"
+                          : "text-gray-400 hover:bg-white/5 hover:text-white border-transparent"
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <span className={`transition-colors duration-150 ${isActive ? "text-[var(--color-accent)]" : "text-gray-400"}`}>
+                          {tab.icon}
+                        </span>
+                        <span>{tab.label}</span>
+                      </div>
+                      {tab.badge !== undefined && tab.badge > 0 && (
+                        <span className="bg-red-500 text-white text-[9px] font-extrabold px-1.5 py-0.5 rounded-none leading-none">
+                          {tab.badge}
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
               </div>
-              {tab.badge !== undefined && tab.badge > 0 && (
-                <span className="bg-red-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full">
-                  {tab.badge}
-                </span>
-              )}
-            </button>
+            </div>
           ))}
         </nav>
 
@@ -959,14 +1023,15 @@ export default function AdminPage() {
             <h2 className="text-xl font-heading font-bold text-[var(--color-primary)] capitalize">
               {activeTab === "overview" && "Vue d'ensemble"}
               {activeTab === "inscriptions" && "Suivi des Inscriptions & Devis"}
+              {activeTab === "students" && "Gestion des Comptes Étudiants"}
               {activeTab === "formations" && "Gestion des Formations"}
-              {activeTab === "actualites" && "Ã‰diteur du Blog & Actualités"}
+              {activeTab === "actualites" && "Éditeur du Blog & Actualités"}
               {activeTab === "testimonials" && "Gestion des Témoignages"}
               {activeTab === "messages" && "Messages clients"}
               {activeTab === "users" && "Utilisateurs Admin"}
-              {activeTab === "settings" && "ParamÃ¨tres du Site"}
+              {activeTab === "settings" && "Paramètres du Site"}
             </h2>
-            <p className="text-xs text-gray-500 mt-0.5">Bienvenue dans l'interface de contrÃ´le du cabinet CFIG Guinée.</p>
+            <p className="text-xs text-gray-500 mt-0.5">Bienvenue dans l'interface de contrôle du cabinet CFIG Guinée.</p>
           </div>
           <Link
             href="/"
@@ -994,24 +1059,33 @@ export default function AdminPage() {
                 {/* Stats Grid */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                   {[
-                    { title: "Apprenants Formés", val: ((settings?.apprenantsForme || 540) + validatedInscriptionsCount).toString(), desc: "Total cumulé", icon: <Users className="w-5 h-5 text-[var(--color-accent)]" /> },
-                    { title: "Modules Actifs", val: modulesCount.toString(), desc: "Répartis sur 8 catégories", icon: <BookOpen className="w-5 h-5 text-[var(--color-accent)]" /> },
-                    { title: "Demandes en Attente", val: pendingInscriptionsCount.toString(), desc: "Besoin de validation", icon: <GraduationCap className="w-5 h-5 text-amber-500" />, warning: pendingInscriptionsCount > 0 },
-                    { title: "Nouveaux Messages", val: unreadMessagesCount.toString(), desc: "Formulaires de contact", icon: <Mail className="w-5 h-5 text-red-500" />, alert: unreadMessagesCount > 0 }
+                    { title: "Apprenants Formés", val: ((settings?.apprenantsForme || 540) + validatedInscriptionsCount).toString(), desc: "Total cumulé", trend: "+12% ce mois", icon: <Users className="w-5 h-5 text-[var(--color-primary)]" />, bg: "bg-[var(--color-primary)]/5" },
+                    { title: "Modules de Formation", val: modulesCount.toString(), desc: "Catalogue actif", trend: "Mis à jour", icon: <BookOpen className="w-5 h-5 text-[var(--color-accent)]" />, bg: "bg-[var(--color-accent)]/5" },
+                    { title: "Inscriptions en Attente", val: pendingInscriptionsCount.toString(), desc: "Dossiers à traiter", trend: pendingInscriptionsCount > 0 ? "Action requise" : "À jour", icon: <ClipboardList className={`w-5 h-5 ${pendingInscriptionsCount > 0 ? "text-amber-600" : "text-gray-400"}`} />, bg: pendingInscriptionsCount > 0 ? "bg-amber-50" : "bg-gray-50", warning: pendingInscriptionsCount > 0 },
+                    { title: "Nouveaux Messages", val: unreadMessagesCount.toString(), desc: "Boîte de réception", trend: unreadMessagesCount > 0 ? "Non lus" : "Aucun", icon: <Mail className={`w-5 h-5 ${unreadMessagesCount > 0 ? "text-red-600" : "text-gray-400"}`} />, bg: unreadMessagesCount > 0 ? "bg-red-50" : "bg-gray-50", alert: unreadMessagesCount > 0 }
                   ].map((card, i) => (
                     <div 
                       key={i} 
-                      className={`bg-white border p-6 flex items-start justify-between shadow-sm hover:shadow-md transition-shadow ${
+                      className={`bg-white border p-6 flex items-start justify-between shadow-sm hover:shadow-lg transition-all duration-300 relative overflow-hidden group ${
                         card.warning ? "border-l-4 border-l-amber-500 border-gray-200" : 
                         card.alert ? "border-l-4 border-l-red-500 border-gray-200" : "border-gray-200"
                       }`}
                     >
-                      <div>
-                        <span className="text-[10px] uppercase tracking-wider font-bold text-gray-400 block mb-1">{card.title}</span>
-                        <span className="text-3xl font-heading font-black text-[var(--color-primary)] block mb-1">{card.val}</span>
-                        <span className="text-[10px] text-gray-500 font-medium">{card.desc}</span>
+                      <div className="space-y-3">
+                        <span className="text-[10px] uppercase tracking-wider font-extrabold text-gray-400 block">{card.title}</span>
+                        <span className="text-3xl font-heading font-black text-[var(--color-primary)] block leading-none">{card.val}</span>
+                        <div className="flex items-center gap-1.5 mt-2">
+                          <span className={`text-[9px] font-extrabold uppercase px-1.5 py-0.5 leading-none ${
+                            card.warning ? "bg-amber-100 text-amber-800" :
+                            card.alert ? "bg-red-100 text-red-800" :
+                            "bg-green-100 text-green-800"
+                          }`}>
+                            {card.trend}
+                          </span>
+                          <span className="text-[9px] text-gray-400 font-semibold">{card.desc}</span>
+                        </div>
                       </div>
-                      <div className="p-3 bg-gray-50 border border-gray-100">
+                      <div className={`p-3.5 border border-transparent transition-all duration-300 group-hover:border-gray-200 ${card.bg}`}>
                         {card.icon}
                       </div>
                     </div>
@@ -1021,58 +1095,73 @@ export default function AdminPage() {
                 {/* Charts & Analytics */}
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                   {/* Monthly Trend Card */}
-                  <div className="bg-white border border-gray-200 p-6 lg:col-span-2 shadow-sm">
-                    <h3 className="text-sm font-bold uppercase tracking-wider text-[var(--color-primary)] mb-5">Tendances des Inscriptions (2026)</h3>
-                    
-                    {/* SVG Chart mockup - super clean and highly professional */}
-                    <div className="h-64 w-full relative pt-4 flex items-end justify-between border-b border-l border-gray-200">
-                      {/* Grid Lines */}
-                      <div className="absolute inset-0 flex flex-col justify-between pointer-events-none opacity-20 pr-4">
-                        {[100, 75, 50, 25, 0].map((line, li) => (
-                          <div key={li} className="w-full border-t border-dashed border-gray-400 text-[8px] font-bold text-gray-400 text-right -mt-2.5">
-                            {line}%
+                  <div className="bg-white border border-gray-200 p-6 lg:col-span-2 shadow-sm flex flex-col justify-between">
+                    <div>
+                      <div className="flex justify-between items-center mb-6">
+                        <h3 className="text-xs font-bold uppercase tracking-wider text-[var(--color-primary)]">Suivi Mensuel des Inscriptions (2026)</h3>
+                        <span className="flex items-center gap-1 text-[10px] text-green-600 font-extrabold uppercase">
+                          <TrendingUp className="w-3.5 h-3.5" /> +28% Croissance
+                        </span>
+                      </div>
+                      
+                      {/* SVG Chart mockup */}
+                      <div className="h-60 w-full relative pt-4 flex items-end justify-between border-b border-l border-gray-200">
+                        {/* Grid Lines */}
+                        <div className="absolute inset-0 flex flex-col justify-between pointer-events-none opacity-30 pr-4">
+                          {[100, 75, 50, 25, 0].map((line, li) => (
+                            <div key={li} className="w-full border-t border-dashed border-gray-300 text-[8px] font-bold text-gray-400 text-right -mt-2.5">
+                              {line}
+                            </div>
+                          ))}
+                        </div>
+
+                        {/* Bars */}
+                        {[
+                          { month: "Jan", val: 35 },
+                          { month: "Fév", val: 42 },
+                          { month: "Mar", val: 58 },
+                          { month: "Avr", val: 74 },
+                          { month: "Mai", val: 92 }
+                        ].map((item, index) => (
+                          <div key={index} className="flex-1 flex flex-col items-center group relative z-10 px-2 sm:px-4 h-full justify-end">
+                            {/* Hover info badge */}
+                            <div className="absolute bottom-[calc(var(--val-percent)+8px)] bg-[var(--color-primary)] text-white text-[9px] font-black px-1.5 py-0.5 rounded-none opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none shadow-md z-20" style={{ '--val-percent': `${item.val}%` } as React.CSSProperties}>
+                              {item.val} inscriptions
+                            </div>
+                            {/* Bar container */}
+                            <div 
+                              className="w-full bg-[var(--color-accent)]/20 group-hover:bg-[var(--color-accent)] transition-all duration-300 cursor-pointer shadow-sm"
+                              style={{ height: `${item.val}%` }}
+                            />
+                            {/* Month label */}
+                            <span className="text-[10px] font-extrabold uppercase tracking-widest text-gray-400 group-hover:text-[var(--color-primary)] mt-3 transition-colors">
+                              {item.month}
+                            </span>
                           </div>
                         ))}
                       </div>
-
-                      {/* Bars */}
-                      {[
-                        { month: "Jan", val: 35 },
-                        { month: "Fév", val: 42 },
-                        { month: "Mar", val: 58 },
-                        { month: "Avr", val: 74 },
-                        { month: "Mai", val: 92 }
-                      ].map((item, index) => (
-                        <div key={index} className="flex-1 flex flex-col items-center group relative z-10 px-2 sm:px-4">
-                          <div className="text-[10px] font-bold text-[var(--color-accent)] mb-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                            {item.val}
-                          </div>
-                          <div 
-                            style={{ height: `${item.val * 2}px` }} 
-                            className="w-full bg-[var(--color-primary)] group-hover:bg-[var(--color-accent)] transition-all cursor-pointer shadow-sm"
-                          />
-                          <span className="text-[10px] font-bold text-gray-500 mt-2">{item.month}</span>
-                        </div>
-                      ))}
                     </div>
                   </div>
 
                   {/* Popular domains card */}
                   <div className="bg-white border border-gray-200 p-6 shadow-sm">
-                    <h3 className="text-sm font-bold uppercase tracking-wider text-[var(--color-primary)] mb-5">Répartition par Catégorie</h3>
-                    <div className="space-y-4">
+                    <h3 className="text-xs font-bold uppercase tracking-wider text-[var(--color-primary)] mb-5">Répartition par Domaine</h3>
+                    <div className="space-y-4.5">
                       {[
-                        { name: "Analyse des Données", percent: 38, count: 18, color: "bg-[var(--color-primary)]" },
-                        { name: "Gestion & Comptabilité", percent: 28, count: 13, color: "bg-[var(--color-accent)]" },
-                        { name: "Logistique et Transport", percent: 18, count: 9, color: "bg-[var(--color-light)]" },
-                        { name: "Autres Domaines", percent: 16, count: 8, color: "bg-gray-300" }
+                        { name: "Analyse de Données", percent: 38, count: 18, color: "bg-[var(--color-primary)]", icon: <TrendingUp className="w-3.5 h-3.5 text-[var(--color-primary)]" /> },
+                        { name: "Gestion & Comptabilité", percent: 28, count: 13, color: "bg-[var(--color-accent)]", icon: <Award className="w-3.5 h-3.5 text-[var(--color-accent)]" /> },
+                        { name: "Logistique & Transport", percent: 18, count: 9, color: "bg-[var(--color-light)]", icon: <Clock className="w-3.5 h-3.5 text-[var(--color-light)]" /> },
+                        { name: "Autres Formations", percent: 16, count: 8, color: "bg-gray-300", icon: <Sparkles className="w-3.5 h-3.5 text-gray-400" /> }
                       ].map((domain, index) => (
-                        <div key={index} className="space-y-1">
-                          <div className="flex justify-between items-center text-xs font-bold">
-                            <span className="text-gray-700 truncate max-w-[170px]">{domain.name}</span>
-                            <span className="text-[var(--color-primary)]">{domain.percent}% ({domain.count})</span>
+                        <div key={index} className="space-y-1.5">
+                          <div className="flex justify-between items-center text-xs">
+                            <div className="flex items-center gap-2 font-bold text-gray-700">
+                              {domain.icon}
+                              <span className="truncate max-w-[150px]">{domain.name}</span>
+                            </div>
+                            <span className="font-extrabold text-[var(--color-primary)]">{domain.percent}%</span>
                           </div>
-                          <div className="h-2 w-full bg-gray-100 overflow-hidden">
+                          <div className="h-1.5 w-full bg-slate-100 rounded-none overflow-hidden">
                             <div style={{ width: `${domain.percent}%` }} className={`h-full ${domain.color}`} />
                           </div>
                         </div>
@@ -1084,43 +1173,87 @@ export default function AdminPage() {
                 {/* Recents Feed Grid */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                   {/* Recents Inscriptions */}
-                  <div className="bg-white border border-gray-200 p-6 shadow-sm flex flex-col">
-                    <h3 className="text-sm font-bold uppercase tracking-wider text-[var(--color-primary)] mb-4 border-b border-gray-100 pb-3">DerniÃ¨res Inscriptions</h3>
-                    <div className="flex-grow divide-y divide-gray-100">
-                      {inscriptions.slice(0, 4).map((ins, index) => (
-                        <div key={index} className="py-3.5 flex items-center justify-between gap-4">
-                          <div>
-                            <h4 className="font-bold text-sm text-[var(--color-primary)]">{ins.fullName}</h4>
-                            <p className="text-xs text-gray-500">{ins.domain} <span className="italic">{ins.requestType}</span></p>
-                          </div>
-                          <span className={`text-[9px] font-bold px-2 py-0.5 uppercase tracking-wider ${
-                            ins.status === "Validé" ? "bg-green-100 text-green-700" :
-                            ins.status === "Annulé" ? "bg-red-100 text-red-700" : "bg-amber-100 text-amber-700"
-                          }`}>
-                            {ins.status}
-                          </span>
-                        </div>
-                      ))}
+                  <div className="bg-white border border-gray-200 p-6 shadow-sm flex flex-col justify-between">
+                    <div>
+                      <div className="flex justify-between items-center mb-4 border-b border-gray-100 pb-3">
+                        <h3 className="text-xs font-bold uppercase tracking-wider text-[var(--color-primary)]">Dernières Inscriptions</h3>
+                        <button 
+                          onClick={() => setActiveTab("inscriptions")} 
+                          className="text-[9px] font-extrabold uppercase text-[var(--color-accent)] hover:underline flex items-center gap-1 group"
+                        >
+                          Gérer 
+                          <svg className="w-3 h-3 text-[var(--color-accent)] group-hover:translate-x-0.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" /></svg>
+                        </button>
+                      </div>
+                      <div className="divide-y divide-gray-100">
+                        {inscriptions.slice(0, 4).map((ins, index) => {
+                          const initials = ins.fullName ? ins.fullName.split(" ").map(n => n[0]).join("").substring(0, 2).toUpperCase() : "IN";
+                          return (
+                            <div key={index} className="py-3 flex items-center justify-between gap-4 group hover:bg-gray-50/50 transition-colors px-1">
+                              <div className="flex items-center gap-3">
+                                <div className="w-8 h-8 bg-[var(--color-primary)]/5 text-[var(--color-primary)] flex items-center justify-center font-bold text-xs shrink-0">
+                                  {initials}
+                                </div>
+                                <div className="min-w-0">
+                                  <h4 className="font-bold text-xs text-gray-800 leading-tight truncate max-w-[150px]">{ins.fullName}</h4>
+                                  <p className="text-[10px] text-gray-400 mt-0.5 font-medium truncate max-w-[180px]">{ins.domain} • <span className="italic">{ins.requestType}</span></p>
+                                </div>
+                              </div>
+                              <span className={`text-[9px] font-extrabold px-2 py-0.5 uppercase tracking-wider ${
+                                ins.status === "Validé" ? "bg-green-50 text-green-700 border border-green-150" :
+                                ins.status === "Annulé" ? "bg-red-50 text-red-700 border border-red-150" : "bg-amber-50 text-amber-700 border border-amber-150"
+                              }`}>
+                                {ins.status}
+                              </span>
+                            </div>
+                          );
+                        })}
+                        {inscriptions.length === 0 && (
+                          <p className="text-xs text-gray-400 italic py-6 text-center">Aucune inscription récente.</p>
+                        )}
+                      </div>
                     </div>
                   </div>
 
                   {/* Recents Messages */}
-                  <div className="bg-white border border-gray-200 p-6 shadow-sm flex flex-col">
-                    <h3 className="text-sm font-bold uppercase tracking-wider text-[var(--color-primary)] mb-4 border-b border-gray-100 pb-3">Messages récents</h3>
-                    <div className="flex-grow divide-y divide-gray-100">
-                      {messages.slice(0, 4).map((msg, index) => (
-                        <div key={index} className="py-3.5 flex items-center justify-between gap-4">
-                          <div className="truncate max-w-[280px]">
-                            <h4 className="font-bold text-sm text-[var(--color-primary)]">{msg.fullName}</h4>
-                            <p className="text-xs text-gray-500 truncate italic">"{msg.message}"</p>
-                          </div>
-                          <span className={`text-[9px] font-bold px-2 py-0.5 uppercase tracking-wider ${
-                            msg.status === "Lu" ? "bg-gray-100 text-gray-500" : "bg-red-100 text-red-700"
-                          }`}>
-                            {msg.status}
-                          </span>
-                        </div>
-                      ))}
+                  <div className="bg-white border border-gray-200 p-6 shadow-sm flex flex-col justify-between">
+                    <div>
+                      <div className="flex justify-between items-center mb-4 border-b border-gray-100 pb-3">
+                        <h3 className="text-xs font-bold uppercase tracking-wider text-[var(--color-primary)]">Messages récents</h3>
+                        <button 
+                          onClick={() => setActiveTab("messages")} 
+                          className="text-[9px] font-extrabold uppercase text-[var(--color-accent)] hover:underline flex items-center gap-1 group"
+                        >
+                          Ouvrir 
+                          <svg className="w-3 h-3 text-[var(--color-accent)] group-hover:translate-x-0.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" /></svg>
+                        </button>
+                      </div>
+                      <div className="divide-y divide-gray-100">
+                        {messages.slice(0, 4).map((msg, index) => {
+                          const initials = msg.fullName ? msg.fullName.split(" ").map(n => n[0]).join("").substring(0, 2).toUpperCase() : "CO";
+                          return (
+                            <div key={index} className="py-3 flex items-center justify-between gap-4 group hover:bg-gray-50/50 transition-colors px-1">
+                              <div className="flex items-center gap-3 min-w-0">
+                                <div className="w-8 h-8 bg-[var(--color-accent)]/5 text-[var(--color-accent)] flex items-center justify-center font-bold text-xs shrink-0">
+                                  {initials}
+                                </div>
+                                <div className="min-w-0">
+                                  <h4 className="font-bold text-xs text-gray-800 leading-tight truncate max-w-[150px]">{msg.fullName}</h4>
+                                  <p className="text-[10px] text-gray-400 mt-0.5 font-medium truncate italic max-w-[200px]">"{msg.message}"</p>
+                                </div>
+                              </div>
+                              <span className={`text-[9px] font-extrabold px-2 py-0.5 uppercase tracking-wider shrink-0 ${
+                                msg.status === "Lu" ? "bg-gray-100 text-gray-500 border border-gray-200" : "bg-red-50 text-red-700 border border-red-150 animate-pulse"
+                              }`}>
+                                {msg.status}
+                              </span>
+                            </div>
+                          );
+                        })}
+                        {messages.length === 0 && (
+                          <p className="text-xs text-gray-400 italic py-6 text-center">Aucun message de contact récent.</p>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -1236,13 +1369,287 @@ export default function AdminPage() {
                       {filteredInscriptions.length === 0 && (
                         <tr>
                           <td colSpan={7} className="py-12 text-center text-gray-500 italic">
-                            Aucune inscription ne correspond Ã  ces critÃ¨res.
+                            Aucune inscription ne correspond à ces critères.
                           </td>
                         </tr>
                       )}
                     </tbody>
                   </table>
                 </div>
+              </motion.div>
+            )}
+
+            {/* ====================================
+                TAB: GESTION DES ÉTUDIANTS
+            ==================================== */}
+            {activeTab === "students" && (
+              <motion.div
+                key="students"
+                initial={{ opacity: 0, y: 15 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0 }}
+                className="space-y-6"
+              >
+                {/* Search and filters bar */}
+                <div className="bg-white border border-gray-200 p-4 shadow-sm flex flex-col sm:flex-row gap-4 justify-between items-center">
+                  <div className="relative w-full sm:max-w-xs">
+                    <input
+                      type="text"
+                      className="w-full pl-9 pr-4 py-2 border border-gray-300 text-xs font-medium focus:outline-none focus:ring-1 focus:ring-[var(--color-primary)] bg-gray-50"
+                      placeholder="Rechercher par nom ou e-mail..."
+                      value={studentSearchQuery}
+                      onChange={(e) => setStudentSearchQuery(e.target.value)}
+                    />
+                    <Search className="w-4 h-4 text-gray-400 absolute left-3 top-2.5" />
+                  </div>
+                  <span className="text-xs font-bold text-gray-500 uppercase tracking-widest">
+                    {students.length} Étudiant{students.length > 1 ? "s" : ""} Inscrit{students.length > 1 ? "s" : ""}
+                  </span>
+                </div>
+
+                {/* Table */}
+                <div className="bg-white border border-gray-200 shadow-sm overflow-x-auto">
+                  <table className="w-full text-left border-collapse">
+                    <thead>
+                      <tr className="bg-gray-50 border-b border-gray-200 text-[10px] font-bold uppercase tracking-wider text-gray-400">
+                        <th className="py-4 px-6">Étudiant</th>
+                        <th className="py-4 px-6">Profession / Statut</th>
+                        <th className="py-4 px-6">Cours Actifs</th>
+                        <th className="py-4 px-6">Rejoint le</th>
+                        <th className="py-4 px-6 text-right">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100 text-xs font-medium">
+                      {students
+                        .filter(
+                          (s) =>
+                            s.fullName.toLowerCase().includes(studentSearchQuery.toLowerCase()) ||
+                            s.email.toLowerCase().includes(studentSearchQuery.toLowerCase())
+                        )
+                        .map((student) => {
+                          const studentInitials = student.fullName
+                            ? student.fullName.split(" ").map((n) => n[0]).join("").substring(0, 2).toUpperCase()
+                            : "ST";
+                          
+                          const professionLabels: Record<string, string> = {
+                            student: "Étudiant / Élève",
+                            employee: "Salarié / Professionnel",
+                            unemployed: "Recherche d'emploi",
+                            other: "Autre"
+                          };
+                          
+                          const joinedDate = student.createdAt
+                            ? new Date(student.createdAt).toLocaleDateString("fr-FR", {
+                                day: "numeric",
+                                month: "short",
+                                year: "numeric"
+                              })
+                            : "-";
+
+                          return (
+                            <tr key={student.uid} className="hover:bg-gray-50 transition-colors">
+                              <td className="py-4 px-6 flex items-center gap-3">
+                                <div className="w-8 h-8 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-xs shrink-0">
+                                  {studentInitials}
+                                </div>
+                                <div>
+                                  <div className="font-bold text-[var(--color-primary)]">{student.fullName}</div>
+                                  <div className="text-[10px] text-gray-500 mt-0.5">{student.email} {student.phone && `| ${student.phone}`}</div>
+                                </div>
+                              </td>
+                              <td className="py-4 px-6 text-gray-600 font-semibold">
+                                {professionLabels[student.profession] || student.profession || "Autre"}
+                              </td>
+                              <td className="py-4 px-6">
+                                <span className="inline-block bg-blue-50 text-blue-700 border border-blue-100 px-2 py-0.5 font-bold text-[9px] uppercase tracking-wider rounded-md">
+                                  {student.enrolledCourses?.length || 0} cours
+                                </span>
+                              </td>
+                              <td className="py-4 px-6 text-gray-500">{joinedDate}</td>
+                              <td className="py-4 px-6 text-right">
+                                <button
+                                  onClick={() => setSelectedStudent(student)}
+                                  className="px-3 py-1.5 border border-gray-200 text-[10px] font-bold uppercase tracking-wider text-blue-600 bg-blue-50/30 hover:bg-blue-50 transition-colors"
+                                >
+                                  Voir la fiche
+                                </button>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      {students.filter(
+                        (s) =>
+                          s.fullName.toLowerCase().includes(studentSearchQuery.toLowerCase()) ||
+                          s.email.toLowerCase().includes(studentSearchQuery.toLowerCase())
+                      ).length === 0 && (
+                        <tr>
+                          <td colSpan={5} className="py-12 text-center text-gray-500 italic">
+                            Aucun étudiant ne correspond à ces critères.
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Student Details Modal Dialog */}
+                {selectedStudent && (
+                  <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
+                    <div className="bg-white rounded-[2rem] border border-gray-100 shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto flex flex-col p-6 md:p-8 animate-in zoom-in-95 duration-200 relative text-gray-800">
+                      
+                      {/* Close button */}
+                      <button
+                        onClick={() => setSelectedStudent(null)}
+                        className="absolute right-6 top-6 p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-50 rounded-xl transition-all"
+                      >
+                        <X className="w-5 h-5" />
+                      </button>
+
+                      {/* Header info */}
+                      <div className="flex items-start gap-4 pb-6 border-b border-gray-100">
+                        <div className="w-14 h-14 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-lg shadow-inner shrink-0">
+                          {selectedStudent.fullName ? selectedStudent.fullName.split(" ").map((n) => n[0]).join("").substring(0, 2).toUpperCase() : "ST"}
+                        </div>
+                        <div>
+                          <span className="bg-green-50 text-green-700 text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded border border-green-150">
+                            Compte Étudiant Actif
+                          </span>
+                          <h3 className="text-lg font-black text-gray-900 mt-1 leading-tight">{selectedStudent.fullName}</h3>
+                          <p className="text-xs text-gray-400 mt-0.5">{selectedStudent.email} {selectedStudent.phone && `| +224 ${selectedStudent.phone}`}</p>
+                        </div>
+                      </div>
+
+                      {/* Content sections */}
+                      <div className="py-6 space-y-6 flex-grow">
+                        {/* Status/Profession details */}
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="bg-slate-50 p-4.5 rounded-2xl border border-slate-100">
+                            <span className="block text-[8px] font-bold text-gray-400 uppercase tracking-widest">Statut Professionnel</span>
+                            <span className="block text-xs font-bold text-gray-800 mt-1.5">
+                              {selectedStudent.profession === "student" && "Étudiant / Élève"}
+                              {selectedStudent.profession === "employee" && "Salarié / Professionnel"}
+                              {selectedStudent.profession === "unemployed" && "Recherche d'emploi"}
+                              {selectedStudent.profession === "other" && "Autre"}
+                            </span>
+                          </div>
+                          <div className="bg-slate-50 p-4.5 rounded-2xl border border-slate-100">
+                            <span className="block text-[8px] font-bold text-gray-400 uppercase tracking-widest">Date d'inscription</span>
+                            <span className="block text-xs font-bold text-gray-800 mt-1.5">
+                              {selectedStudent.createdAt 
+                                ? new Date(selectedStudent.createdAt).toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" })
+                                : "-"}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Enrolled Courses and Progress */}
+                        <div className="space-y-3">
+                          <h4 className="text-[10px] font-extrabold uppercase tracking-wider text-gray-400">Formations & Progression</h4>
+                          
+                          {selectedStudent.enrolledCourses && selectedStudent.enrolledCourses.length > 0 ? (
+                            <div className="space-y-3">
+                              {selectedStudent.enrolledCourses.map((courseId) => {
+                                const matchedCourse = AVAILABLE_COURSES.find(c => c.id === courseId);
+                                if (!matchedCourse) return null;
+
+                                // Calculate progress
+                                let totalLectures = 0;
+                                matchedCourse.modules.forEach(m => totalLectures += m.lectures.length);
+                                const completedCount = selectedStudent.progress[courseId]?.length || 0;
+                                const progressPct = totalLectures > 0 ? Math.round((completedCount / totalLectures) * 100) : 0;
+
+                                return (
+                                  <div key={courseId} className="p-4 bg-white border border-gray-150 rounded-2xl space-y-3 shadow-sm">
+                                    <div className="flex justify-between items-start">
+                                      <div>
+                                        <h5 className="text-xs font-extrabold text-gray-900 leading-snug">{matchedCourse.title}</h5>
+                                        <span className="text-[9px] text-gray-400 font-bold uppercase tracking-wider">{matchedCourse.category}</span>
+                                      </div>
+                                      <span className={`text-[9px] font-bold px-2 py-0.5 rounded-md uppercase tracking-wider ${
+                                        progressPct === 100 
+                                          ? "bg-green-50 text-green-700 border border-green-150" 
+                                          : "bg-blue-50 text-blue-700 border border-blue-150"
+                                      }`}>
+                                        {progressPct === 100 ? "Validé ✓" : "En cours"}
+                                      </span>
+                                    </div>
+
+                                    {/* Progress indicator */}
+                                    <div className="space-y-1.5">
+                                      <div className="flex justify-between items-center text-[9px] font-bold text-gray-400">
+                                        <span>Leçons validées : {completedCount} / {totalLectures}</span>
+                                        <span className="text-blue-600">{progressPct}%</span>
+                                      </div>
+                                      <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                                        <div 
+                                          className={`h-full rounded-full transition-all duration-300 ${
+                                            progressPct === 100 ? "bg-green-500" : "bg-blue-600"
+                                          }`} 
+                                          style={{ width: `${progressPct}%` }} 
+                                        />
+                                      </div>
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          ) : (
+                            <p className="text-xs text-gray-400 italic bg-slate-50/50 p-4 rounded-xl border border-dashed border-gray-200">
+                              Cet étudiant n'est inscrit à aucun cours pour le moment.
+                            </p>
+                          )}
+                        </div>
+
+                        {/* Manual Enrollment Selector */}
+                        <div className="pt-4 border-t border-gray-150 space-y-3">
+                          <h4 className="text-[10px] font-extrabold uppercase tracking-wider text-gray-400">Inscrire manuellement à un cours</h4>
+                          
+                          {AVAILABLE_COURSES.filter(c => !selectedStudent.enrolledCourses?.includes(c.id)).length > 0 ? (
+                            <div className="flex gap-3">
+                              <select
+                                id="admin-enroll-course-select"
+                                className="flex-grow bg-slate-50 border border-gray-250 px-4 py-2.5 text-xs rounded-xl focus:outline-none focus:border-blue-600 focus:bg-white transition-all text-gray-800"
+                                defaultValue=""
+                                onChange={async (e) => {
+                                  const courseId = e.target.value;
+                                  if (courseId) {
+                                    await handleEnrollStudent(selectedStudent.uid, courseId);
+                                    // Reset select value
+                                    e.target.value = "";
+                                    alert("Étudiant inscrit au cours avec succès !");
+                                  }
+                                }}
+                              >
+                                <option value="" disabled>Sélectionner un cours du catalogue...</option>
+                                {AVAILABLE_COURSES
+                                  .filter(c => !selectedStudent.enrolledCourses?.includes(c.id))
+                                  .map(c => (
+                                    <option key={c.id} value={c.id}>
+                                      {c.title} ({c.category})
+                                    </option>
+                                  ))}
+                              </select>
+                            </div>
+                          ) : (
+                            <p className="text-xs text-green-700 bg-green-50/50 p-4 rounded-xl border border-green-150/40">
+                              L'étudiant est déjà inscrit à l'intégralité du catalogue.
+                            </p>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Footer Actions */}
+                      <div className="pt-4 border-t border-gray-100 flex justify-end">
+                        <button
+                          onClick={() => setSelectedStudent(null)}
+                          className="px-6 py-2.5 border border-gray-200 text-[10px] font-bold uppercase tracking-widest rounded-xl hover:bg-slate-50 transition-all"
+                        >
+                          Fermer la fiche
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </motion.div>
             )}
 
@@ -1673,7 +2080,7 @@ export default function AdminPage() {
                       {filteredMessages.length === 0 && (
                         <tr>
                           <td colSpan={5} className="py-12 text-center text-gray-500 italic">
-                            Aucun message de contact reÃ§u.
+                            Aucun message de contact reçu.
                           </td>
                         </tr>
                       )}
@@ -1695,7 +2102,7 @@ export default function AdminPage() {
                 className="space-y-6 max-w-2xl"
               >
                 <div className="bg-white border border-gray-200 p-8 shadow-sm">
-                  <h3 className="text-sm font-bold uppercase tracking-wider text-[var(--color-primary)] mb-6 border-b border-gray-100 pb-3">ParamÃ¨tres globaux du site</h3>
+                  <h3 className="text-sm font-bold uppercase tracking-wider text-[var(--color-primary)] mb-6 border-b border-gray-100 pb-3">Parametres globaux du site</h3>
                   
                   <form onSubmit={handleSaveSettings} className="space-y-5">
                     <div>
@@ -1948,7 +2355,7 @@ export default function AdminPage() {
                         <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-1.5">Intitulé de la formation *</label>
                         <input type="text" required disabled={isSavingModule}
                           className="w-full bg-gray-50 border border-gray-300 px-3 py-2 text-xs focus:outline-none focus:border-[var(--color-primary)] rounded-none disabled:opacity-50"
-                          placeholder="Ex: Initiation Ã  Excel"
+                          placeholder="Ex: Initiation à Excel"
                           value={newModuleTitle} onChange={e => setNewModuleTitle(e.target.value)} />
                       </div>
                       <div className="col-span-2">
@@ -1987,7 +2394,7 @@ export default function AdminPage() {
                             className="w-full bg-white border border-gray-300 px-3 py-2 text-xs focus:outline-none focus:border-[var(--color-primary)] rounded-none disabled:opacity-50"
                             placeholder="Ex: 2 000 000" value={newModulePrix}
                             onChange={e => setNewModulePrix(e.target.value === "" ? "" : Number(e.target.value))} />
-                          <p className="text-[9px] text-gray-400 mt-1">CoÃ»t total de la formation</p>
+                          <p className="text-[9px] text-gray-400 mt-1">Coût total de la formation</p>
                         </div>
                         <div>
                           <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-1.5">Frais d'inscription (GNF)</label>
@@ -1995,7 +2402,7 @@ export default function AdminPage() {
                             className="w-full bg-white border border-gray-300 px-3 py-2 text-xs focus:outline-none focus:border-[var(--color-primary)] rounded-none disabled:opacity-50"
                             placeholder="Ex: 100 000" value={newModulePrixInscription}
                             onChange={e => setNewModulePrixInscription(e.target.value === "" ? "" : Number(e.target.value))} />
-                          <p className="text-[9px] text-gray-400 mt-1">Frais d'enrÃ´lement seulement</p>
+                          <p className="text-[9px] text-gray-400 mt-1">Frais d'enrôlement seulement</p>
                         </div>
                       </div>
                       <div>
@@ -2097,7 +2504,7 @@ export default function AdminPage() {
                       <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-1.5">Objectifs pédagogiques <span className="text-gray-400 normal-case font-normal">(1 par ligne)</span></label>
                       <textarea rows={4} disabled={isSavingModule}
                         className="w-full bg-gray-50 border border-gray-300 px-3 py-2 text-xs focus:outline-none focus:border-[var(--color-primary)] rounded-none disabled:opacity-50 resize-none"
-                        placeholder="MaÃ®triser les fondamentaux de Excel\nCréer des tableaux croisés dynamiques\n..."
+                        placeholder="Maîtriser les fondamentaux de Excel\nCréer des tableaux croisés dynamiques\n..."
                         value={newModuleObjectifs} onChange={e => setNewModuleObjectifs(e.target.value)} />
                     </div>
                     <div>
@@ -2127,7 +2534,7 @@ export default function AdminPage() {
                 {/* === ONGLET 4: Programme Détaillé === */}
                 {modalTab === 4 && (
                   <div className="space-y-4">
-                    <p className="text-[10px] text-gray-400">Ajoutez chaque module du programme. Les points de contenu sont séparés par des retours Ã  la ligne.</p>
+                    <p className="text-[10px] text-gray-400">Ajoutez chaque module du programme. Les points de contenu sont séparés par des retours à  la ligne.</p>
                     {newModuleProgramme.map((chapter, i) => (
                       <div key={i} className="border border-gray-200 p-4 bg-gray-50 space-y-2">
                         <div className="flex items-center gap-2">
@@ -2144,7 +2551,7 @@ export default function AdminPage() {
                         </div>
                         <input type="text" disabled={isSavingModule}
                           className="w-full bg-white border border-gray-300 px-3 py-2 text-xs focus:outline-none focus:border-[var(--color-primary)] rounded-none disabled:opacity-50"
-                          placeholder="Titre du module (ex: Introduction Ã  PowerBI)"
+                          placeholder="Titre du module (ex: Introduction à  PowerBI)"
                           value={chapter.title}
                           onChange={e => {
                             const arr = [...newModuleProgramme];
@@ -2242,7 +2649,7 @@ export default function AdminPage() {
                   <input
                     type="text"
                     className="w-full bg-gray-50 border border-gray-300 px-4 py-2 text-xs focus:outline-none focus:border-[var(--color-primary)] rounded-none"
-                    placeholder="Ex: Conseils, Ã‰vénements"
+                    placeholder="Ex: Conseils, Événements"
                     value={articleCategory}
                     onChange={(e) => setArticleCategory(e.target.value)}
                   />
@@ -2361,7 +2768,7 @@ export default function AdminPage() {
                 <input
                   type="text" required
                   className="w-full bg-gray-50 border border-gray-300 px-4 py-2 text-xs focus:outline-none focus:border-[var(--color-primary)] rounded-none"
-                  placeholder="Ex: Remise des diplÃ´mes 2024"
+                  placeholder="Ex: Remise des diplômes 2024"
                   value={galleryTitle} onChange={(e) => setGalleryTitle(e.target.value)}
                 />
               </div>
@@ -2377,7 +2784,7 @@ export default function AdminPage() {
                   <option value="Salles de cours">Salles de cours</option>
                   <option value="Remises de certificats">Remises de certificats</option>
                   <option value="Ateliers">Ateliers</option>
-                  <option value="Ã‰vénements divers">Ã‰vénements divers</option>
+                  <option value="Événements divers">Événements divers</option>
                   <option value="Vie étudiante">Vie étudiante</option>
                 </select>
               </div>
@@ -2393,7 +2800,7 @@ export default function AdminPage() {
                     newMedia.splice(index, 1);
                     return newMedia;
                   })}
-                  label={editingGalleryId ? "Remplacer le média" : editingAlbumTitle ? "Ajouter d'autres médias Ã  l'album" : "Uploader un ou plusieurs médias"}
+                  label={editingGalleryId ? "Remplacer le média" : editingAlbumTitle ? "Ajouter d'autres médias à l'album" : "Uploader un ou plusieurs médias"}
                   maxFiles={editingGalleryId ? 1 : 15}
                 />
               </div>

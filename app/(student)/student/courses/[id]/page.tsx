@@ -150,7 +150,7 @@ export default function StudentCoursePlayerPage() {
                   <h1 className="text-xl font-heading font-black text-gray-950 leading-tight">
                     {activeLecture?.title || course.title}
                   </h1>
-                  <span className="bg-blue-50 text-blue-600 text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md border border-blue-100">
+                  <span className="bg-blue-50 text-blue-600 text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-none border border-blue-200">
                     Offert par CFIG Guinée
                   </span>
                 </div>
@@ -164,7 +164,7 @@ export default function StudentCoursePlayerPage() {
           {/* Active Lecture Media Content */}
           {activeLecture ? (
             activeLecture.type === "video" ? (
-              <div className="rounded-3xl overflow-hidden shadow-sm border border-gray-100 bg-black aspect-video shrink-0 relative">
+              <div className="rounded-none overflow-hidden shadow-sm border border-gray-200 bg-black aspect-video shrink-0 relative">
                 <VideoLecturePlayer
                   videoUrl={activeLecture.videoUrl || ""}
                   title={activeLecture.title}
@@ -173,15 +173,15 @@ export default function StudentCoursePlayerPage() {
                 />
               </div>
             ) : activeLecture.type === "live" ? (
-              <div className="bg-gradient-to-br from-slate-900 via-blue-950 to-slate-950 border border-slate-800 rounded-3xl overflow-hidden shadow-lg p-8 md:p-12 text-white flex flex-col justify-between aspect-video shrink-0 relative">
+              <div className="bg-slate-950 border border-gray-800 rounded-none shadow-sm p-8 md:p-12 text-white flex flex-col justify-between aspect-video shrink-0 relative">
                 {/* Glowing decorative effect */}
-                <div className="absolute right-0 top-0 w-48 h-48 bg-blue-500/10 rounded-full blur-3xl pointer-events-none" />
+                <div className="absolute right-0 top-0 w-48 h-48 bg-blue-500/5 blur-3xl pointer-events-none" />
                 
                 <div className="space-y-4 relative z-10">
                   <div className="flex items-center gap-3">
                     <span className="flex h-3 w-3 relative">
-                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                      <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-none bg-red-400 opacity-75"></span>
+                      <span className="relative inline-flex rounded-none h-3 w-3 bg-red-500"></span>
                     </span>
                     <span className="text-[10px] font-black uppercase tracking-widest text-red-400">
                       Cours interactif en direct (Live)
@@ -201,7 +201,7 @@ export default function StudentCoursePlayerPage() {
                     href={activeLecture.meetUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="w-full sm:w-auto px-8 py-3.5 bg-blue-600 hover:bg-blue-500 text-white text-[10px] font-bold uppercase tracking-widest rounded-2xl transition-all shadow-lg shadow-blue-500/20 text-center flex items-center justify-center gap-2 hover:scale-[1.02]"
+                    className="w-full sm:w-auto px-8 py-3.5 bg-[var(--color-primary)] hover:bg-[var(--color-accent)] text-white text-[10px] font-bold uppercase tracking-widest rounded-none border border-[var(--color-primary)] transition-all text-center flex items-center justify-center gap-2 shadow-sm hover:shadow-md"
                   >
                     <Video className="w-4 h-4" />
                     Rejoindre la classe en direct
@@ -209,7 +209,7 @@ export default function StudentCoursePlayerPage() {
                   
                   <button
                     onClick={handleToggleComplete}
-                    className={`w-full sm:w-auto px-6 py-3.5 text-[10px] font-bold uppercase tracking-widest rounded-2xl transition-all border text-center ${
+                    className={`w-full sm:w-auto px-6 py-3.5 text-[10px] font-bold uppercase tracking-widest rounded-none transition-all border text-center ${
                       isLectureCompleted(activeLecture.id)
                         ? "bg-green-50/10 border-green-50/30 text-green-400"
                         : "bg-white/5 border-white/10 hover:bg-white/10 text-white"
@@ -220,7 +220,7 @@ export default function StudentCoursePlayerPage() {
                 </div>
               </div>
             ) : (
-              <div className="bg-white border border-gray-100 rounded-3xl overflow-hidden shadow-sm flex flex-col shrink-0">
+              <div className="bg-white border border-gray-200 rounded-none overflow-hidden shadow-sm flex flex-col shrink-0">
                 <div className="bg-gray-50 px-6 py-4 flex items-center justify-between border-b border-gray-100">
                   <h4 className="text-[10px] font-extrabold uppercase tracking-wider text-gray-400 flex items-center gap-1.5">
                     <BookOpen className="w-3.5 h-3.5 text-blue-500" />
@@ -228,7 +228,7 @@ export default function StudentCoursePlayerPage() {
                   </h4>
                   <button
                     onClick={handleToggleComplete}
-                    className={`px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-1.5 ${
+                    className={`px-4 py-2 rounded-none text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-1.5 ${
                       isLectureCompleted(activeLecture.id)
                         ? "bg-green-50 text-green-700 border border-green-200"
                         : "bg-blue-600 text-white hover:bg-blue-700 shadow-sm shadow-blue-600/10"
@@ -254,25 +254,25 @@ export default function StudentCoursePlayerPage() {
               </div>
             )
           ) : (
-            <div className="aspect-video bg-gray-950 rounded-3xl flex items-center justify-center text-white/50 text-xs shrink-0">
+            <div className="aspect-video bg-gray-950 border border-gray-800 rounded-none flex items-center justify-center text-white/50 text-xs shrink-0">
               Sélectionnez une leçon dans le sommaire pour commencer.
             </div>
           )}
 
           {/* Navigation & Controls Bar under media */}
-          <div className="bg-white border border-gray-100 p-4 rounded-2xl shadow-sm flex items-center justify-between shrink-0">
+          <div className="bg-white border border-gray-200 p-4 rounded-none shadow-sm flex items-center justify-between shrink-0">
             <div className="flex items-center gap-3">
               <button
                 disabled={!prevLecture}
                 onClick={() => prevLecture && setActiveLecture(prevLecture)}
-                className="px-4 py-2.5 bg-slate-50 hover:bg-slate-100 text-gray-600 disabled:opacity-40 disabled:hover:bg-slate-50 text-[10px] font-bold uppercase tracking-wider rounded-xl transition-all border border-gray-250 flex items-center gap-1.5"
+                className="px-4 py-2.5 bg-slate-50 hover:bg-slate-100 text-gray-600 disabled:opacity-40 disabled:hover:bg-slate-50 text-[10px] font-bold uppercase tracking-wider rounded-none transition-all border border-gray-200 flex items-center gap-1.5 shadow-sm hover:shadow-md"
               >
                 Précédent
               </button>
               <button
                 disabled={!nextLecture}
                 onClick={() => nextLecture && setActiveLecture(nextLecture)}
-                className="px-4 py-2.5 bg-slate-50 hover:bg-slate-100 text-gray-600 disabled:opacity-40 disabled:hover:bg-slate-50 text-[10px] font-bold uppercase tracking-wider rounded-xl transition-all border border-gray-250 flex items-center gap-1.5"
+                className="px-4 py-2.5 bg-slate-50 hover:bg-slate-100 text-gray-600 disabled:opacity-40 disabled:hover:bg-slate-50 text-[10px] font-bold uppercase tracking-wider rounded-none transition-all border border-gray-200 flex items-center gap-1.5 shadow-sm hover:shadow-md"
               >
                 Suivant
               </button>
@@ -282,10 +282,10 @@ export default function StudentCoursePlayerPage() {
             <div className="flex items-center gap-3">
               <button
                 onClick={() => setBookmarked(!bookmarked)}
-                className={`w-10 h-10 rounded-xl border flex items-center justify-center transition-all ${
+                className={`w-10 h-10 rounded-none border transition-all ${
                   bookmarked 
-                    ? "bg-amber-50 border-amber-200 text-amber-500" 
-                    : "bg-white border-gray-200 text-gray-400 hover:text-gray-600"
+                    ? "bg-blue-50 border-blue-300 text-blue-600 shadow-sm" 
+                    : "bg-white border-gray-300 text-gray-400 hover:text-gray-600"
                 }`}
               >
                 <Bookmark className="w-4 h-4 fill-current" />
@@ -293,7 +293,7 @@ export default function StudentCoursePlayerPage() {
               {activeLecture && activeLecture.type === "video" && (
                 <button
                   onClick={handleToggleComplete}
-                  className={`px-5 py-2.5 text-[10px] font-bold uppercase tracking-widest rounded-xl transition-all ${
+                  className={`px-5 py-2.5 text-[10px] font-bold uppercase tracking-widest rounded-none transition-all ${
                     isLectureCompleted(activeLecture.id)
                       ? "bg-green-50 border border-green-200 text-green-700"
                       : "bg-blue-600 hover:bg-blue-700 text-white shadow-sm shadow-blue-600/10"
@@ -307,8 +307,8 @@ export default function StudentCoursePlayerPage() {
 
           {/* Lesson Metadata Stats Row */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 shrink-0">
-            <div className="bg-white border border-gray-100 p-4 rounded-2xl shadow-sm flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
+            <div className="bg-white border border-gray-200 p-4 rounded-none shadow-sm flex items-center gap-3">
+              <div className="w-9 h-9 rounded-none border border-blue-200 bg-blue-50 text-blue-600 flex items-center justify-center">
                 <Clock className="w-4.5 h-4.5" />
               </div>
               <div>
@@ -317,8 +317,8 @@ export default function StudentCoursePlayerPage() {
               </div>
             </div>
 
-            <div className="bg-white border border-gray-100 p-4 rounded-2xl shadow-sm flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center">
+            <div className="bg-white border border-gray-200 p-4 rounded-none shadow-sm flex items-center gap-3">
+              <div className="w-9 h-9 rounded-none border border-purple-200 bg-purple-50 text-purple-600 flex items-center justify-center">
                 <Award className="w-4.5 h-4.5" />
               </div>
               <div>
@@ -327,8 +327,8 @@ export default function StudentCoursePlayerPage() {
               </div>
             </div>
 
-            <div className="bg-white border border-gray-100 p-4 rounded-2xl shadow-sm flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl bg-orange-50 text-orange-600 flex items-center justify-center">
+            <div className="bg-white border border-gray-200 p-4 rounded-none shadow-sm flex items-center gap-3">
+              <div className="w-9 h-9 rounded-none border border-orange-200 bg-orange-50 text-orange-600 flex items-center justify-center">
                 <BookOpen className="w-4.5 h-4.5" />
               </div>
               <div>
@@ -337,8 +337,8 @@ export default function StudentCoursePlayerPage() {
               </div>
             </div>
 
-            <div className="bg-white border border-gray-100 p-4 rounded-2xl shadow-sm flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl bg-green-50 text-green-600 flex items-center justify-center">
+            <div className="bg-white border border-gray-200 p-4 rounded-none shadow-sm flex items-center gap-3">
+              <div className="w-9 h-9 rounded-none border border-green-200 bg-green-50 text-green-600 flex items-center justify-center">
                 <Star className="w-4.5 h-4.5 text-green-500 fill-current" />
               </div>
               <div>
@@ -349,7 +349,7 @@ export default function StudentCoursePlayerPage() {
           </div>
 
           {/* Description & Resources Section (Tab-based desktop / Accordion mobile) */}
-          <div className="bg-white border border-gray-100 rounded-3xl overflow-hidden shadow-sm shrink-0">
+          <div className="bg-white border border-gray-200 rounded-none overflow-hidden shadow-sm shrink-0">
             {/* Desktop Tabs Header */}
             <div className="hidden md:flex border-b border-gray-100 bg-gray-50/50 px-6">
               {[
@@ -418,10 +418,10 @@ export default function StudentCoursePlayerPage() {
                             e.preventDefault();
                             alert(`Téléchargement de la ressource : ${res.name}`);
                           }}
-                          className="flex items-center justify-between p-3.5 bg-slate-50 border border-gray-150 hover:border-blue-600/30 rounded-2xl transition-all"
+                          className="flex items-center justify-between p-3.5 bg-slate-50 border border-gray-200 rounded-none shadow-sm hover:shadow-md transition-all"
                         >
                           <div className="flex items-center gap-3 overflow-hidden">
-                            <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
+                            <div className="w-8 h-8 rounded-none border border-blue-200 bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
                               <FileText className="w-4 h-4" />
                             </div>
                             <span className="text-xs font-bold truncate max-w-[180px] text-gray-700">{res.name}</span>
@@ -516,7 +516,7 @@ export default function StudentCoursePlayerPage() {
                               e.preventDefault();
                               alert(`Téléchargement de la ressource : ${res.name}`);
                             }}
-                            className="flex items-center justify-between p-3 bg-slate-50 border border-gray-150 rounded-xl hover:border-blue-600/30 transition-all"
+                            className="flex items-center justify-between p-3 bg-slate-50 border border-gray-200 rounded-none shadow-sm hover:shadow-md transition-all"
                           >
                             <span className="font-bold truncate max-w-[200px] text-gray-700">{res.name}</span>
                             <Download className="w-4 h-4 text-gray-400 shrink-0" />
@@ -539,7 +539,7 @@ export default function StudentCoursePlayerPage() {
           {/* Section 1: User course progress */}
           <div className="p-6 border-b border-gray-100 shrink-0 space-y-4">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-xs shadow-inner shrink-0">
+              <div className="w-10 h-10 rounded-none border border-blue-250 bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-xs shadow-inner shrink-0">
                 {initials}
               </div>
               <div className="overflow-hidden">
@@ -550,8 +550,8 @@ export default function StudentCoursePlayerPage() {
 
             {/* Micro Progress Bar */}
             <div className="space-y-1.5">
-              <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                <div className="h-full bg-blue-600 rounded-full transition-all duration-500" style={{ width: `${progressPercent}%` }} />
+              <div className="w-full h-1.5 bg-slate-100 border border-gray-200 rounded-none overflow-hidden">
+                <div className="h-full bg-blue-600 rounded-none transition-all duration-500" style={{ width: `${progressPercent}%` }} />
               </div>
             </div>
           </div>
@@ -563,24 +563,24 @@ export default function StudentCoursePlayerPage() {
                 <Activity className="w-3.5 h-3.5 text-blue-600" />
                 Analytics Hebdomadaires
               </h4>
-              <span className="text-[9px] font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-md">
+              <span className="text-[9px] font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-none border border-blue-100">
                 +12% vs n-1
               </span>
             </div>
 
             {/* Interactive SVG Curve graph */}
-            <div className="relative h-24 w-full bg-slate-50/50 border border-slate-100 rounded-2xl overflow-hidden p-2 flex flex-col justify-between">
+            <div className="relative h-24 w-full bg-slate-50/50 border border-gray-200 rounded-none overflow-hidden p-2 flex flex-col justify-between shadow-sm">
               <svg className="absolute inset-0 w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none">
                 {/* Grid Lines */}
                 <line x1="0" y1="25" x2="100" y2="25" stroke="#f1f5f9" strokeWidth="0.5" />
                 <line x1="0" y1="50" x2="100" y2="50" stroke="#f1f5f9" strokeWidth="0.5" />
                 <line x1="0" y1="75" x2="100" y2="75" stroke="#f1f5f9" strokeWidth="0.5" />
                 
-                {/* Activity Fill path */}
+                {/* Activity Fill path - flat solid color fill in compliance with CFIG rules */}
                 <path
                   d="M 0 90 Q 20 60 40 70 T 80 30 T 100 10 L 100 100 L 0 100 Z"
-                  fill="url(#gradient-activity)"
-                  opacity="0.3"
+                  fill="#3b82f6"
+                  opacity="0.1"
                 />
 
                 {/* Activity Line path */}
@@ -591,14 +591,6 @@ export default function StudentCoursePlayerPage() {
                   strokeWidth="2"
                   strokeLinecap="round"
                 />
-
-                {/* SVG Gradient definition */}
-                <defs>
-                  <linearGradient id="gradient-activity" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#3b82f6" />
-                    <stop offset="100%" stopColor="#ffffff" stopOpacity="0" />
-                  </linearGradient>
-                </defs>
               </svg>
               
               {/* Daily Labels */}
@@ -625,7 +617,7 @@ export default function StudentCoursePlayerPage() {
               {course.modules.map((m) => {
                 const isExpanded = expandedModules[m.id] !== false;
                 return (
-                  <div key={m.id} className="border border-gray-150 rounded-2xl overflow-hidden bg-slate-50/30">
+                  <div key={m.id} className="border border-gray-200 rounded-none overflow-hidden bg-slate-50/30 shadow-sm">
                     <button
                       onClick={() => toggleModule(m.id)}
                       className="w-full p-3 bg-slate-50/50 hover:bg-slate-50 flex items-center justify-between border-b border-gray-100 transition-colors"
@@ -645,9 +637,9 @@ export default function StudentCoursePlayerPage() {
                             <button
                               key={lecture.id}
                               onClick={() => setActiveLecture(lecture)}
-                              className={`w-full p-2.5 rounded-xl text-left transition-all flex items-center justify-between border ${
+                              className={`w-full p-2.5 rounded-none text-left transition-all flex items-center justify-between border ${
                                 isCurrent
-                                  ? "bg-blue-50/60 border-blue-200/60 text-blue-700 font-bold"
+                                  ? "bg-blue-50 border-blue-300 text-blue-700 font-bold shadow-sm"
                                   : "bg-white border-transparent hover:bg-slate-50 text-gray-650"
                               }`}
                             >
