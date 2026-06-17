@@ -60,38 +60,45 @@ export default function AboutPage() {
               initial={{ opacity: 0, x: 30 }}
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true }}
-              className="bg-[var(--color-surface)] p-8 rounded-2xl shadow-inner border border-gray-100"
+              className="bg-white border border-gray-200 rounded-none shadow-sm flex flex-col hover:shadow-md transition-all duration-300"
             >
-              <h3 className="text-2xl font-heading font-bold text-[var(--color-primary)] mb-6">Notre Approche</h3>
-              <ul className="space-y-4">
-                <li className="flex items-start">
-                  <div className="bg-blue-100 p-2 rounded-full mr-4 mt-1">
-                    <Target className="w-5 h-5 text-[var(--color-secondary)]" />
-                  </div>
-                  <div>
-                    <h4 className="font-bold text-[var(--color-primary)]">Holistique</h4>
-                    <p className="text-sm text-gray-600">Une vision globale des défis de votre entreprise.</p>
-                  </div>
-                </li>
-                <li className="flex items-start">
-                  <div className="bg-blue-100 p-2 rounded-full mr-4 mt-1">
-                    <Briefcase className="w-5 h-5 text-[var(--color-secondary)]" />
-                  </div>
-                  <div>
-                    <h4 className="font-bold text-[var(--color-primary)]">Pratique</h4>
-                    <p className="text-sm text-gray-600">Des formations axées sur la pratique et l'utilisation d'outils réels.</p>
-                  </div>
-                </li>
-                <li className="flex items-start">
-                  <div className="bg-blue-100 p-2 rounded-full mr-4 mt-1">
-                    <LifeBuoy className="w-5 h-5 text-[var(--color-secondary)]" />
-                  </div>
-                  <div>
-                    <h4 className="font-bold text-[var(--color-primary)]">Personnalisée</h4>
-                    <p className="text-sm text-gray-600">Des solutions de consultation adaptées à votre contexte spécifique.</p>
-                  </div>
-                </li>
-              </ul>
+              <div className="bg-blue-50/60 border-b border-blue-100 p-6 flex items-center gap-4">
+                <div className="w-12 h-12 rounded-none bg-blue-100 flex items-center justify-center text-[var(--color-accent)]">
+                  <GraduationCap className="w-6 h-6" />
+                </div>
+                <h3 className="text-xl font-heading font-bold text-[var(--color-primary)]">Notre Approche</h3>
+              </div>
+              <div className="p-8 flex-grow">
+                <ul className="space-y-6">
+                  <li className="flex items-start">
+                    <div className="bg-blue-50 border border-blue-100 p-2.5 rounded-none mr-4 mt-1 shrink-0 text-[var(--color-accent)]">
+                      <Target className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-[var(--color-primary)] text-sm">Holistique</h4>
+                      <p className="text-xs text-gray-550 mt-1">Une vision globale des défis de votre entreprise.</p>
+                    </div>
+                  </li>
+                  <li className="flex items-start">
+                    <div className="bg-blue-50 border border-blue-100 p-2.5 rounded-none mr-4 mt-1 shrink-0 text-[var(--color-accent)]">
+                      <Briefcase className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-[var(--color-primary)] text-sm">Pratique</h4>
+                      <p className="text-xs text-gray-550 mt-1">Des formations axées sur la pratique et l'utilisation d'outils réels.</p>
+                    </div>
+                  </li>
+                  <li className="flex items-start">
+                    <div className="bg-blue-50 border border-blue-100 p-2.5 rounded-none mr-4 mt-1 shrink-0 text-[var(--color-accent)]">
+                      <LifeBuoy className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-[var(--color-primary)] text-sm">Personnalisée</h4>
+                      <p className="text-xs text-gray-550 mt-1">Des solutions de consultation adaptées à votre contexte spécifique.</p>
+                    </div>
+                  </li>
+                </ul>
+              </div>
             </motion.div>
           </div>
         </div>
@@ -100,18 +107,24 @@ export default function AboutPage() {
       {/* Mission & Vision */}
       <section className="py-20 bg-[var(--color-surface)]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid md:grid-cols-2 gap-12">
+          <div className="grid md:grid-cols-2 gap-8">
             <motion.div
               initial={{ opacity: 0, y: 30 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              className="bg-white p-10 rounded-2xl shadow-md border-t-4 border-[var(--color-secondary)]"
+              className="bg-white border border-gray-200 rounded-none shadow-sm flex flex-col hover:shadow-md transition-all duration-300"
             >
-              <Target className="w-12 h-12 text-[var(--color-secondary)] mb-6" />
-              <h3 className="text-2xl font-heading font-bold text-[var(--color-primary)] mb-4">Notre Mission</h3>
-              <p className="text-gray-600 leading-relaxed">
-                Fournir des services de formation et de consultation de haute qualité qui permettent aux individus de réaliser leur plein potentiel et aux organisations d'optimiser leurs performances opérationnelles et stratégiques.
-              </p>
+              <div className="bg-red-50/60 border-b border-red-100 p-6 flex items-center gap-4">
+                <div className="w-12 h-12 rounded-none bg-red-100 flex items-center justify-center text-[var(--color-secondary)]">
+                  <Target className="w-6 h-6" />
+                </div>
+                <h3 className="text-xl font-heading font-bold text-[var(--color-primary)]">Notre Mission</h3>
+              </div>
+              <div className="p-8 flex-grow">
+                <p className="text-gray-600 leading-relaxed text-sm">
+                  Fournir des services de formation et de consultation de haute qualité qui permettent aux individus de réaliser leur plein potentiel et aux organisations d'optimiser leurs performances opérationnelles et stratégiques.
+                </p>
+              </div>
             </motion.div>
 
             <motion.div
@@ -119,13 +132,19 @@ export default function AboutPage() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: 0.2 }}
-              className="bg-white p-10 rounded-2xl shadow-md border-t-4 border-[var(--color-accent)]"
+              className="bg-white border border-gray-200 rounded-none shadow-sm flex flex-col hover:shadow-md transition-all duration-300"
             >
-              <Eye className="w-12 h-12 text-[var(--color-accent)] mb-6" />
-              <h3 className="text-2xl font-heading font-bold text-[var(--color-primary)] mb-4">Notre Vision</h3>
-              <p className="text-gray-600 leading-relaxed">
-                Devenir le partenaire privilégié et le leader incontesté de la formation professionnelle continue et du conseil en gestion en République de Guinée et dans la sous-région, reconnu pour notre excellence et notre impact positif.
-              </p>
+              <div className="bg-blue-50/60 border-b border-blue-100 p-6 flex items-center gap-4">
+                <div className="w-12 h-12 rounded-none bg-blue-100 flex items-center justify-center text-[var(--color-accent)]">
+                  <Eye className="w-6 h-6" />
+                </div>
+                <h3 className="text-xl font-heading font-bold text-[var(--color-primary)]">Notre Vision</h3>
+              </div>
+              <div className="p-8 flex-grow">
+                <p className="text-gray-600 leading-relaxed text-sm">
+                  Devenir le partenaire privilégié et le leader incontesté de la formation professionnelle continue et du conseil en gestion en République de Guinée et dans la sous-région, reconnu pour notre excellence et notre impact positif.
+                </p>
+              </div>
             </motion.div>
           </div>
         </div>
