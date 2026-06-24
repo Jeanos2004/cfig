@@ -78,8 +78,7 @@ export default function StudentDashboardPage() {
 
   // Collect all sessions from enrolled courses
   let allSessions: { course: StudentCourse; session: any }[] = [];
-    const coursesToUse = enrolledCourses.length > 0 ? enrolledCourses : courses;
-    coursesToUse.forEach(course => {
+    enrolledCourses.forEach(course => {
       (course.modules || []).forEach(module => {
         (module.sessions || []).forEach(session => {
           allSessions.push({ course, session });

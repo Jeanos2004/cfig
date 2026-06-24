@@ -22,6 +22,20 @@ export default function StudentHeader({
   searchQuery, 
   setSearchQuery, 
   showSearch = false 
+
+
+interface HeaderProps {
+  title?: string;
+  searchQuery?: string;
+  setSearchQuery?: (query: string) => void;
+  showSearch?: boolean;
+}
+
+export default function StudentHeader({ 
+  title, 
+  searchQuery, 
+  setSearchQuery, 
+  showSearch = false 
 }: HeaderProps) {
   const router = useRouter();
   const [profile, setProfile] = useState<StudentProfile | null>(null);
