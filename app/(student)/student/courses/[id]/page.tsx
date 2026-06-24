@@ -31,7 +31,7 @@ export default function StudentCoursePlayerPage() {
 
   const fetchProfile = async (uid: string) => {
     const p = await studentDb.getProfile(uid);
-    setProfile(p);
+    if (!p || !p.profession) { router.push("/admin"); return; } setProfile(p);
   };
 
   useEffect(() => {

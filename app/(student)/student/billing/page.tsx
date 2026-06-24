@@ -25,7 +25,7 @@ export default function StudentBillingPage() {
             studentDb.getProfile(currentUser.uid),
             studentDb.getCourses()
           ]);
-          setProfile(p);
+          if (!p || !p.profession) { router.push("/admin"); return; } setProfile(p);
           setCourses(list);
         } catch (e) {
           console.error("Error loading billing data:", e);

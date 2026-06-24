@@ -47,12 +47,14 @@ export default function StudentProfilePage() {
       if (currentUser) {
         setUser(currentUser);
         const p = await studentDb.getProfile(currentUser.uid);
-        if (p) {
+          if (!p || !p.profession) {
+            router.push("/admin");
+            return;
+          }
           setProfile(p);
           setFullName(p.fullName);
           setPhone(p.phone || "");
           setProfession(p.profession || "other");
-        }
       } else {
         router.push("/student/login");
       }

@@ -27,7 +27,7 @@ export default function StudentCertificatesPage() {
             studentDb.getProfile(currentUser.uid),
             studentDb.getCourses()
           ]);
-          setProfile(p);
+          if (!p || !p.profession) { router.push("/admin"); return; } setProfile(p);
           setCourses(list);
         } catch (e) {
           console.error("Error loading certificates page data:", e);
