@@ -94,7 +94,7 @@ export default function StudentDashboardPage() {
   const todaysSessions = allSessions.filter(s => s.session.date.startsWith(todayStr));
 
   // Filter upcoming sessions (strictly after today)
-  const upcomingSessions = allSessions.filter(s => new Date(s.session.date).getTime() > currentDate.getTime() && !s.session.date.startsWith(todayStr)).slice(0, 4);
+  let upcomingSessions = allSessions.filter(s => new Date(s.session.date).getTime() > currentDate.getTime() && !s.session.date.startsWith(todayStr)); if (upcomingSessions.length === 0) { const allCatSessions: any[] = []; courses.forEach(course => { (course.modules || []).forEach(module => { (module.sessions || []).forEach(session => { allCatSessions.push({ course, session }); }); }); }); upcomingSessions = allCatSessions.filter(s => new Date(s.session.date).getTime() > currentDate.getTime() && !s.session.date.startsWith(todayStr)).sort((a, b) => new Date(a.session.date).getTime() - new Date(b.session.date).getTime()); } upcomingSessions = upcomingSessions.slice(0, 4);
 
   const formattedDate = currentDate.toLocaleDateString("fr-FR", {
     weekday: "long",
