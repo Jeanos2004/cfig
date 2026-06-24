@@ -123,7 +123,9 @@ export default function StudentBillingPage() {
                             </td>
                             <td className="py-4 px-6 text-right">
                               <button
-                                onClick={() => alert(`Téléchargement de la facture ${invoiceId}...`)}
+                                onClick={() => {
+                                  import("@/lib/invoiceHelper").then(m => m.downloadInvoice(course.title, course.price || 1500000, profile?.fullName || "Apprenant", invoiceId));
+                                }}
                                 className="p-1.5 border border-gray-200 hover:border-[var(--color-accent)] text-gray-500 hover:text-[var(--color-accent)] rounded-none transition-all shadow-sm"
                                 title="Télécharger la facture"
                               >
@@ -163,7 +165,9 @@ export default function StudentBillingPage() {
                           <span className="text-xs font-black text-gray-800 mt-1.5 block">{formatPrice(course.price)}</span>
                         </div>
                         <button
-                          onClick={() => alert(`Téléchargement de la facture ${invoiceId}...`)}
+                          onClick={() => {
+                            import("@/lib/invoiceHelper").then(m => m.downloadInvoice(course.title, course.price || 1500000, profile?.fullName || "Apprenant", invoiceId));
+                          }}
                           className="px-4.5 py-2 bg-slate-50 hover:bg-slate-100 border border-gray-200 text-gray-600 text-[9px] font-bold uppercase tracking-widest rounded-none transition-all flex items-center gap-1.5 shadow-sm"
                           title="Télécharger la facture"
                         >

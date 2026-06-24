@@ -219,8 +219,19 @@ export default function StudentDashboardPage() {
                             <p className="text-[9px] text-gray-400 uppercase tracking-wider font-extrabold">{c.category}</p>
                             <h3 className="font-bold text-sm text-gray-900 mt-1 leading-snug line-clamp-2">{c.title}</h3>
                           </div>
-                          <div className="bg-slate-50 px-2 py-1 border border-gray-150 text-[10px] font-bold text-gray-500">
-                            {completed}/{total} Séances
+                          <div className="flex flex-col items-end gap-1">
+                            <div className="bg-slate-50 px-2 py-1 border border-gray-150 text-[10px] font-bold text-gray-500">
+                              {completed}/{total} Séances
+                            </div>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                import("@/lib/invoiceHelper").then(m => m.downloadInvoice(c.title, c.price || 1500000, profile?.fullName || "Apprenant"));
+                              }}
+                              className="bg-blue-50 text-blue-600 px-2 py-1 border border-blue-100 text-[10px] font-bold hover:bg-blue-100 flex items-center gap-1"
+                            >
+                              Facture PDF
+                            </button>
                           </div>
                         </div>
 
