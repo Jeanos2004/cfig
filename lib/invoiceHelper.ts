@@ -31,7 +31,9 @@ export async function downloadInvoice(courseTitle: string, price: number, userNa
     });
 
     if (!response.ok) {
-      throw new Error('Failed to generate invoice');
+      const errText = await response.text();
+      alert(`Erreur API (${response.status}): ${errText}`);
+      throw new Error(`Failed to generate invoice: ${response.status} ${errText}`);
     }
 
     const blob = await response.blob();

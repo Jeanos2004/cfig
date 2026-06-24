@@ -48,7 +48,7 @@ export async function POST(req: Request) {
     });
 
   } catch (error: any) {
-    console.error('Invoice Generation Error:', error);
+    console.error('Invoice Generation Error:', error); require('fs').writeFileSync('invoice-error.txt', error.stack || error.message || String(error));
     return NextResponse.json(
       { error: 'Failed to generate invoice.', details: error.message },
       { status: 500 }
