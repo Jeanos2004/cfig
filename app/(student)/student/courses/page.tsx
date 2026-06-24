@@ -66,7 +66,7 @@ export default function StudentCoursesPage() {
   const getTotalCount = (course: StudentCourse) => {
     let count = 0;
     course.modules.forEach(m => {
-      count += m.lectures.length;
+      count += (m.sessions || []).length;
     });
     return count;
   };
@@ -150,7 +150,7 @@ export default function StudentCoursesPage() {
                   <div className="space-y-2">
                     <span className="text-[10px] font-bold text-blue-600 uppercase tracking-widest flex items-center gap-1.5">
                       <Clock className="w-3.5 h-3.5" />
-                      Dernier cours étudié
+                      Formation en cours
                     </span>
                     <h3 className="text-lg font-heading font-black text-gray-950 leading-tight">
                       {recentCourse.title}
@@ -162,7 +162,7 @@ export default function StudentCoursesPage() {
 
                   <div className="mt-6 md:mt-0 space-y-4">
                     <div className="flex items-center justify-between text-xs font-bold">
-                      <span className="text-gray-400 uppercase tracking-wider text-[10px]">Progression : {recentCompleted}/{recentTotal} Leçons</span>
+                      <span className="text-gray-400 uppercase tracking-wider text-[10px]">Présence : {recentCompleted}/{recentTotal} Séances</span>
                       <span className="text-blue-600 font-extrabold">{recentProgressPercent}%</span>
                     </div>
 
@@ -175,8 +175,8 @@ export default function StudentCoursesPage() {
                         onClick={() => router.push(`/student/courses/${recentCourse!.id}`)}
                         className="w-full sm:w-auto px-6 py-3 bg-[var(--color-primary)] hover:bg-[var(--color-accent)] text-white text-[10px] font-bold uppercase tracking-widest rounded-none border border-[var(--color-primary)] transition-all hover:-translate-y-0.5 active:translate-y-0 flex items-center justify-center gap-2 shrink-0 shadow-sm hover:shadow-md"
                       >
-                        <Play className="w-3.5 h-3.5 fill-current" />
-                        <span>Continuer l'apprentissage</span>
+                        <BookOpen className="w-3.5 h-3.5 fill-current" />
+                        <span>Voir le planning</span>
                       </button>
                     </div>
                   </div>

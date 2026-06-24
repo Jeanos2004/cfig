@@ -67,8 +67,8 @@ export default function CourseProgressCard({
           {isEnrolled ? (
             <div className="flex items-center gap-4 ml-auto">
               <div className="text-right">
-                <span className="block text-[8px] font-bold uppercase tracking-wider text-gray-400">Progression</span>
-                <span className="block text-[10px] font-extrabold text-blue-650">{progressPercent}%</span>
+                <span className="block text-[8px] font-bold uppercase tracking-wider text-gray-400">Présence</span>
+                <span className="block text-[10px] font-extrabold text-blue-650">{completedCount}/{totalCount} Séances</span>
               </div>
               <button
                 onClick={onAction}
@@ -139,9 +139,9 @@ export default function CourseProgressCard({
               <div className="flex justify-between items-center text-[10px] font-bold uppercase tracking-wider">
                 <span className="text-gray-400 flex items-center gap-1">
                   <BookOpen className="w-3.5 h-3.5 text-[var(--color-accent)]" />
-                  {completedCount}/{totalCount} Leçons
+                  {completedCount}/{totalCount} Séances
                 </span>
-                <span className="text-[var(--color-accent)]">{progressPercent}% Complété</span>
+                <span className="text-[var(--color-accent)]">{progressPercent}% Présence</span>
               </div>
               
               {/* Progress bar */}
@@ -156,7 +156,7 @@ export default function CourseProgressCard({
                 onClick={onAction}
                 className="w-full mt-2 py-2.5 bg-[var(--color-primary)] hover:bg-[var(--color-accent)] text-white text-[10px] font-bold uppercase tracking-widest transition-all flex items-center justify-center gap-1.5 rounded-none"
               >
-                <span>Reprendre le cours</span>
+                <span>Voir le planning</span>
                 <ArrowRight className="w-3.5 h-3.5" />
               </button>
             </div>

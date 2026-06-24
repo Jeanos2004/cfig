@@ -58,7 +58,7 @@ export default function StudentCertificatesPage() {
   const getTotalCount = (course: StudentCourse) => {
     let count = 0;
     course.modules.forEach(m => {
-      count += m.lectures.length;
+      count += (m.sessions || []).length;
     });
     return count;
   };

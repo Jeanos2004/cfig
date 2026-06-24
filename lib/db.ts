@@ -8,7 +8,7 @@ import {
   setDoc,
   deleteDoc
 } from "firebase/firestore";
-import { StudentProfile } from "./studentDb";
+import { StudentProfile, CourseSession } from "./studentDb";
 
 // === TYPES ===
 
@@ -31,6 +31,7 @@ export interface FormationDetails {
 }
 
 export interface ModuleItem {
+  id?: string;
   titre: string;
   outils: string[];
   prix?: number;           // Prix de la formation (coût total)
@@ -38,6 +39,7 @@ export interface ModuleItem {
   methodePaiement?: string;
   image?: string;
   details?: FormationDetails;     // Toutes les infos détaillées
+  sessions?: CourseSession[];     // Séances de cours
 }
 
 export interface CategorieFormations {

@@ -1,4 +1,5 @@
 import { firestore, auth } from "./firebase";
+import { db } from "./db";
 import { doc, getDoc, setDoc, getDocs, collection, deleteDoc } from "firebase/firestore";
 import { onAuthStateChanged, User } from "firebase/auth";
 
@@ -11,17 +12,16 @@ export interface StudentProfile {
   phone: string;
   profession: string; // "student" | "employee" | "unemployed" | "other"
   enrolledCourses: string[]; // List of course IDs
-  progress: Record<string, string[]>; // courseId -> list of completed lecture IDs
+  progress: Record<string, string[]>; // courseId -> list of attended session IDs
   createdAt: string;
 }
 
-export interface Lecture {
+export interface CourseSession {
   id: string;
   title: string;
+  date: string; // ISO date string e.g., "2026-06-25T18:00:00Z"
   duration: string;
-  type: "video" | "text" | "live";
-  videoUrl?: string;
-  textContent?: string;
+  location: string;
   meetUrl?: string;
   resources?: { name: string; url: string }[];
 }
@@ -29,7 +29,7 @@ export interface Lecture {
 export interface CourseModule {
   id: string;
   title: string;
-  lectures: Lecture[];
+  sessions: CourseSession[];
 }
 
 export interface StudentCourse {
@@ -53,48 +53,35 @@ export const AVAILABLE_COURSES: StudentCourse[] = [
     description: "Maîtrisez PowerBI Desktop et Services pour concevoir des rapports professionnels interactifs et automatiser vos analyses.",
     duration: "40 heures",
     image: "/images/programmes/analyse.jpg",
-    price: 1500000, // In GNF (Guinean Franc)
+    price: 1500000, 
     modules: [
       {
         id: "pbi-m1",
         title: "Module 1 : Introduction et Modélisation",
-        lectures: [
+        sessions: [
           {
-            id: "pbi-l1",
+            id: "pbi-s1",
             title: "1.1 Bienvenue et installation de PowerBI Desktop",
-            duration: "12:15",
-            type: "video",
-            videoUrl: "https://www.youtube.com/watch?v=y78n4wV2kHY",
+            date: "2026-06-22T18:00:00Z", // Past
+            duration: "2 heures",
+            location: "Salle B, Siège CFIG",
             resources: [{ name: "Support de cours PDF", url: "#" }]
           },
           {
-            id: "pbi-l2",
-            title: "1.2 Guide écrit : Modélisation des Données et Bonnes Pratiques",
-            duration: "Lecture (10 min)",
-            type: "text",
-            textContent: `
-              <h3>Qu'est-ce que la Modélisation des Données ?</h3>
-              <p>La modélisation consiste à structurer vos tables de façon à ce que PowerBI puisse les analyser efficacement. En général, on utilise le <strong>schéma en étoile (Star Schema)</strong>, composé de :</p>
-              <ul>
-                <li><strong>Tables de Faits :</strong> Contiennent les transactions ou mesures numériques (ex: ventes, inscriptions, heures).</li>
-                <li><strong>Tables de Dimensions :</strong> Contiennent les attributs descriptifs de vos faits (ex: clients, dates, produits).</li>
-              </ul>
-              <blockquote><strong>Règle d'or :</strong> Évitez à tout prix les relations de type N-N (plusieurs-à-plusieurs) directes entre vos tables de faits. Créez toujours une table de dimension intermédiaire.</blockquote>
-              <h3>Les étapes clés de la modélisation :</h3>
-              <ol>
-                <li>Identifier vos clés primaires et clés étrangères.</li>
-                <li>Créer des relations unidirectionnelles (1-à-plusieurs).</li>
-                <li>Configurer une table de calendrier dynamique pour vos calculs de time intelligence.</li>
-              </ol>
-            `,
+            id: "pbi-s2",
+            title: "1.2 Modélisation des Données et Bonnes Pratiques",
+            date: "2026-06-24T18:00:00Z", // Today!
+            duration: "2 heures",
+            location: "Salle B, Siège CFIG",
+            meetUrl: "https://zoom.us/j/1234567890",
             resources: [{ name: "Fiche technique Modélisation PDF", url: "#" }]
           },
           {
-            id: "pbi-l3",
+            id: "pbi-s3",
             title: "1.3 Connexion aux sources de données Excel",
-            duration: "18:40",
-            type: "video",
-            videoUrl: "https://www.youtube.com/watch?v=T3_97D3NlV0",
+            date: "2026-06-26T18:00:00Z", // Future
+            duration: "2 heures",
+            location: "Salle B, Siège CFIG",
             resources: [{ name: "Fichier d'exercice Excel", url: "#" }]
           }
         ]
@@ -102,42 +89,23 @@ export const AVAILABLE_COURSES: StudentCourse[] = [
       {
         id: "pbi-m2",
         title: "Module 2 : Power Query et DAX",
-        lectures: [
+        sessions: [
           {
-            id: "pbi-l4",
+            id: "pbi-s4",
             title: "2.1 Nettoyage et transformation avec Power Query",
-            duration: "24:10",
-            type: "video",
-            videoUrl: "https://www.youtube.com/watch?v=y78n4wV2kHY",
+            date: "2026-06-29T18:00:00Z",
+            duration: "2 heures",
+            location: "Salle B, Siège CFIG",
             resources: [{ name: "Guide des transformations", url: "#" }]
           },
           {
-            id: "pbi-l5",
-            title: "2.2 Documentation DAX : Les fonctions incontournables",
-            duration: "Lecture (15 min)",
-            type: "text",
-            textContent: `
-              <h3>Introduction au DAX (Data Analysis Expressions)</h3>
-              <p>Le DAX est le langage de formule utilisé dans PowerBI. Voici les fonctions de base essentielles pour construire des tableaux de bord dynamiques :</p>
-              <pre><code>// 1. Somme simple
-Total Ventes = SUM(Ventes[Montant])
-
-// 2. Filtrer des données de manière dynamique
-Ventes Orange Money = CALCULATE([Total Ventes], Ventes[MoyenPaiement] = "Orange Money")
-
-// 3. Calculer sur l'année précédente (Time Intelligence)
-Ventes N-1 = CALCULATE([Total Ventes], SAMEPERIODLASTYEAR(Calendrier[Date]))</code></pre>
-              <p>Ces trois fonctions vous permettront de résoudre 80% des besoins de calculs courants en entreprise.</p>
-            `,
+            id: "pbi-s5",
+            title: "2.2 Introduction au DAX",
+            date: "2026-07-01T18:00:00Z",
+            duration: "2 heures",
+            location: "Salle B, Siège CFIG",
+            meetUrl: "https://zoom.us/j/0987654321",
             resources: [{ name: "Cheat Sheet DAX PDF", url: "#" }]
-          },
-          {
-            id: "pbi-l6",
-            title: "2.3 Écrire ses premières mesures en DAX (SUM, CALCULATE)",
-            duration: "30:05",
-            type: "video",
-            videoUrl: "https://www.youtube.com/watch?v=T3_97D3NlV0",
-            resources: [{ name: "Aide-mémoire DAX", url: "#" }]
           }
         ]
       }
@@ -155,20 +123,21 @@ Ventes N-1 = CALCULATE([Total Ventes], SAMEPERIODLASTYEAR(Calendrier[Date]))</co
       {
         id: "sage-m1",
         title: "Module 1 : Paramétrage initial",
-        lectures: [
+        sessions: [
           {
-            id: "sage-l1",
+            id: "sage-s1",
             title: "1.1 Création du fichier paie et constantes",
-            duration: "15:20",
-            type: "video",
-            videoUrl: "https://www.youtube.com/watch?v=y78n4wV2kHY"
+            date: "2026-06-20T09:00:00Z",
+            duration: "3 heures",
+            location: "Salle A, Siège CFIG",
+            meetUrl: "https://meet.google.com/abc-defg-hij"
           },
           {
-            id: "sage-l2",
+            id: "sage-s2",
             title: "1.2 Configuration des fiches de personnel",
-            duration: "20:45",
-            type: "video",
-            videoUrl: "https://www.youtube.com/watch?v=T3_97D3NlV0",
+            date: "2026-06-27T09:00:00Z",
+            duration: "3 heures",
+            location: "Salle A, Siège CFIG",
             resources: [{ name: "Fiche salarié vierge", url: "#" }]
           }
         ]
@@ -187,29 +156,21 @@ Ventes N-1 = CALCULATE([Total Ventes], SAMEPERIODLASTYEAR(Calendrier[Date]))</co
       {
         id: "comm-m1",
         title: "Module 1 : Stratégie de contenu",
-        lectures: [
+        sessions: [
           {
-            id: "comm-l1",
+            id: "comm-s1",
             title: "1.1 Définir sa ligne éditoriale et son persona",
-            duration: "14:30",
-            type: "video",
-            videoUrl: "https://www.youtube.com/watch?v=y78n4wV2kHY"
+            date: "2026-07-05T14:00:00Z",
+            duration: "2 heures",
+            location: "Salle C, Siège CFIG"
           },
           {
-            id: "comm-l2",
+            id: "comm-s2",
             title: "1.2 Planifier son calendrier éditorial",
-            duration: "19:15",
-            type: "video",
-            videoUrl: "https://www.youtube.com/watch?v=T3_97D3NlV0",
+            date: "2026-07-07T14:00:00Z",
+            duration: "2 heures",
+            location: "Salle C, Siège CFIG",
             resources: [{ name: "Modèle de calendrier éditorial", url: "#" }]
-          },
-          {
-            id: "comm-l3",
-            title: "1.3 Session Live : Coaching & Questions-Réponses",
-            duration: "En direct",
-            type: "live",
-            meetUrl: "https://meet.google.com/abc-defg-hij",
-            resources: [{ name: "Notes de préparation live", url: "#" }]
           }
         ]
       }
@@ -276,8 +237,8 @@ export const studentDb = {
     }
   },
 
-  /** Mark a lecture as completed / uncompleted */
-  async toggleLectureProgress(uid: string, courseId: string, lectureId: string, completed: boolean): Promise<void> {
+  /** Mark a session as attended / unattended */
+  async toggleAttendance(uid: string, courseId: string, sessionId: string, attended: boolean): Promise<void> {
     try {
       const profile = await this.getProfile(uid);
       if (!profile) return;
@@ -287,38 +248,57 @@ export const studentDb = {
       }
 
       const list = profile.progress[courseId];
-      if (completed) {
-        if (!list.includes(lectureId)) {
-          list.push(lectureId);
+      if (attended) {
+        if (!list.includes(sessionId)) {
+          list.push(sessionId);
         }
       } else {
-        profile.progress[courseId] = list.filter(id => id !== lectureId);
+        profile.progress[courseId] = list.filter(id => id !== sessionId);
       }
 
       await setDoc(doc(firestore, "students", uid), profile);
     } catch (e) {
-      console.error("Error toggling lecture progress:", e);
+      console.error("Error toggling attendance:", e);
     }
   },
 
-  /** Fetch all courses from Firestore. Initialize with defaults if empty. */
+  /** Fetch all courses from Firestore public formations */
   async getCourses(): Promise<StudentCourse[]> {
     try {
-      const snap = await getDocs(collection(firestore, "student_courses"));
-      if (snap.empty) {
-        // Initialize Firestore with static mock courses
-        for (const course of AVAILABLE_COURSES) {
-          await setDoc(doc(firestore, "student_courses", course.id), course);
-        }
+      const publicCategories = await db.getFormations();
+      const studentCourses: StudentCourse[] = [];
+
+      publicCategories.forEach(cat => {
+        cat.modules.forEach(mod => {
+          // Use mod.id if it exists, otherwise generate a slug
+          const slug = (cat.categorie + "-" + mod.titre).toLowerCase().replace(/[^a-z0-9]/g, "-");
+          const id = mod.id || slug;
+          
+          studentCourses.push({
+            id,
+            title: mod.titre,
+            category: cat.categorie,
+            description: mod.details?.presentation || mod.titre,
+            duration: mod.details?.duree || "Non définie",
+            image: mod.image || cat.image || "/images/programmes/analyse.jpg",
+            price: mod.prix || 0,
+            modules: [
+              {
+                id: id + "-m1",
+                title: "Agenda de la formation",
+                sessions: mod.sessions || []
+              }
+            ]
+          });
+        });
+      });
+
+      if (studentCourses.length === 0) {
         return AVAILABLE_COURSES;
       }
-      const list: StudentCourse[] = [];
-      snap.forEach((d) => {
-        list.push(d.data() as StudentCourse);
-      });
-      return list;
+      return studentCourses;
     } catch (e) {
-      console.error("Error fetching courses from Firestore:", e);
+      console.error("Error fetching courses via public db:", e);
       return AVAILABLE_COURSES; // Fallback to mock data
     }
   },

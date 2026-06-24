@@ -97,7 +97,10 @@ export default function StudentSidebar() {
           {/* Navigation links */}
           <nav className="px-4 py-6 space-y-1">
             {navItems.map((item) => {
-              const isActive = pathname === item.href || (item.href !== "/student/dashboard" && pathname.startsWith(item.href));
+              const isActive = 
+                pathname === item.href || 
+                (item.href === "/student/courses" && pathname.startsWith("/student/courses/")) ||
+                (item.href === "/student/catalog" && pathname.startsWith("/student/catalog/"));
               return (
                 <Link
                   key={item.href}

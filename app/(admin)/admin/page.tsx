@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
@@ -42,7 +42,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { db, CategorieFormations, ModuleItem, Article, InscriptionRequest, ContactMessage, Testimonial, SiteSettings, AdminUser, GalleryItem } from "@/lib/db";
 import { auth } from "@/lib/firebase";
 import { signInWithEmailAndPassword, signOut, onAuthStateChanged, createUserWithEmailAndPassword } from "firebase/auth";
-import { studentDb, StudentProfile, StudentCourse, CourseModule, Lecture } from "@/lib/studentDb";
+import { studentDb, StudentProfile, StudentCourse, CourseModule, CourseSession } from "@/lib/studentDb";
 
 // ============================================================
 // GALLERY TITLE FOLDER — collapsible folder-style section by title
@@ -178,7 +178,7 @@ export default function AdminPage() {
   const [authError, setAuthError] = useState("");
   
   // === ACTIVE TAB STATE ===
-  const [activeTab, setActiveTab] = useState<"overview" | "inscriptions" | "formations" | "actualites" | "testimonials" | "galerie" | "messages" | "settings" | "users" | "students" | "student-courses">("overview");
+  const [activeTab, setActiveTab] = useState<"overview" | "inscriptions" | "formations" | "actualites" | "testimonials" | "galerie" | "messages" | "settings" | "users" | "students">("overview");
 
   // === DATA STATES ===
   const [formations, setFormations] = useState<CategorieFormations[]>([]);
@@ -191,25 +191,26 @@ export default function AdminPage() {
   const [selectedStudent, setSelectedStudent] = useState<StudentProfile | null>(null);
   const [studentSearchQuery, setStudentSearchQuery] = useState("");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [studentCourses, setStudentCourses] = useState<StudentCourse[]>([]);
   
   // Student courses states
-  const [studentCourses, setStudentCourses] = useState<StudentCourse[]>([]);
-  const [showStudentCourseModal, setShowStudentCourseModal] = useState(false);
-  const [studentCourseModalTab, setStudentCourseModalTab] = useState<1 | 2>(1);
-  const [isSavingStudentCourse, setIsSavingStudentCourse] = useState(false);
-  const [editingStudentCourseId, setEditingStudentCourseId] = useState<string | null>(null);
+  
+  
+  
+  
+  
 
   // General fields for student course
-  const [scId, setScId] = useState("");
-  const [scTitle, setScTitle] = useState("");
-  const [scCategory, setScCategory] = useState("");
-  const [scDescription, setScDescription] = useState("");
-  const [scDuration, setScDuration] = useState("");
-  const [scImage, setScImage] = useState("");
-  const [scPrice, setScPrice] = useState<number | "">("");
+  
+  
+  
+  
+  
+  
+  
 
   // Nested Modules/Lectures State for course builder
-  const [scModules, setScModules] = useState<CourseModule[]>([]);
+  
   
   // Settings & Admins states
   const [settings, setSettings] = useState<SiteSettings | null>(null);
@@ -235,7 +236,7 @@ export default function AdminPage() {
 
   // === MODAL / CRUD FORM STATES ===
   const [showAddModuleModal, setShowAddModuleModal] = useState(false);
-  const [modalTab, setModalTab] = useState<1|2|3|4>(1);
+  const [modalTab, setModalTab] = useState<1|2|3|4|5>(1);
   // Onglet 1 — Infos Générales
   const [newModuleTitle, setNewModuleTitle] = useState("");
   const [newModuleCategory, setNewModuleCategory] = useState("");
@@ -258,6 +259,7 @@ export default function AdminPage() {
   const [newModulePublicCible, setNewModulePublicCible] = useState(""); // virgule-séparé
   const [newModuleDebouches, setNewModuleDebouches] = useState(""); // virgule-séparé
   // Onglet 4 — Programme détaillé
+  const [newModuleSessions, setNewModuleSessions] = useState<CourseSession[]>([]);
   const [newModuleProgramme, setNewModuleProgramme] = useState<{ title: string; points: string }[]>([
     { title: "", points: "" }
   ]);
@@ -306,6 +308,7 @@ export default function AdminPage() {
     setGallery(await db.getGallery());
     setStudents(await db.getStudents());
     setStudentCourses(await studentDb.getCourses());
+    
     
     const siteSettings = await db.getSettings();
     setSettings(siteSettings);
@@ -488,224 +491,6 @@ export default function AdminPage() {
     }
   };
 
-  // === STUDENT COURSE CRUD ACTIONS ===
-
-  const resetStudentCourseForm = () => {
-    setScId("");
-    setScTitle("");
-    setScCategory("");
-    setScDescription("");
-    setScDuration("");
-    setScImage("");
-    setScPrice("");
-    setScModules([]);
-    setEditingStudentCourseId(null);
-    setStudentCourseModalTab(1);
-  };
-
-  const handleSaveStudentCourse = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!scId || !scTitle || !scCategory) {
-      alert("L'identifiant, le titre et la catégorie sont obligatoires.");
-      return;
-    }
-
-    setIsSavingStudentCourse(true);
-    try {
-      const courseData: StudentCourse = {
-        id: scId.trim().toLowerCase().replace(/[^a-z0-9-_]/g, "-"),
-        title: scTitle.trim(),
-        category: scCategory.trim(),
-        description: scDescription.trim(),
-        duration: scDuration.trim() || "0 heure",
-        image: scImage.trim() || "/images/programmes/analyse.jpg",
-        price: Number(scPrice) || 0,
-        modules: scModules
-      };
-
-      await studentDb.saveCourse(courseData);
-      setShowStudentCourseModal(false);
-      resetStudentCourseForm();
-      setStudentCourses(await studentDb.getCourses());
-      alert("Cours enregistré avec succès !");
-    } catch (error) {
-      console.error("Error saving student course:", error);
-      alert("Une erreur est survenue lors de l'enregistrement.");
-    } finally {
-      setIsSavingStudentCourse(false);
-    }
-  };
-
-  const handleDeleteStudentCourse = async (courseId: string) => {
-    if (!confirm("Voulez-vous vraiment supprimer ce cours ? Cette action supprimera également toutes ses leçons et modules associés pour l'espace étudiant.")) return;
-    try {
-      await studentDb.deleteCourse(courseId);
-      setStudentCourses(await studentDb.getCourses());
-      alert("Cours supprimé avec succès.");
-    } catch (error) {
-      console.error("Error deleting course:", error);
-      alert("Erreur lors de la suppression.");
-    }
-  };
-
-  const startEditStudentCourse = (course: StudentCourse) => {
-    setScId(course.id);
-    setScTitle(course.title);
-    setScCategory(course.category);
-    setScDescription(course.description);
-    setScDuration(course.duration);
-    setScImage(course.image);
-    setScPrice(course.price);
-    setScModules(course.modules || []);
-    setEditingStudentCourseId(course.id);
-    setStudentCourseModalTab(1);
-    setShowStudentCourseModal(true);
-  };
-
-  // === NESTED MODULE/LECTURE TREE BUILDER ACTIONS ===
-
-  const addStudentModule = () => {
-    const newMod: CourseModule = {
-      id: `module-${Date.now()}`,
-      title: `Nouveau Module ${scModules.length + 1}`,
-      lectures: []
-    };
-    setScModules([...scModules, newMod]);
-  };
-
-  const updateStudentModuleTitle = (modId: string, title: string) => {
-    setScModules(scModules.map(m => m.id === modId ? { ...m, title } : m));
-  };
-
-  const deleteStudentModule = (modId: string) => {
-    setScModules(scModules.filter(m => m.id !== modId));
-  };
-
-  const moveStudentModule = (index: number, direction: "up" | "down") => {
-    const newIndex = direction === "up" ? index - 1 : index + 1;
-    if (newIndex < 0 || newIndex >= scModules.length) return;
-    const list = [...scModules];
-    const temp = list[index];
-    list[index] = list[newIndex];
-    list[newIndex] = temp;
-    setScModules(list);
-  };
-
-  const addStudentLecture = (modId: string) => {
-    const newLec: Lecture = {
-      id: `lecture-${Date.now()}`,
-      title: "Nouvelle leçon",
-      duration: "10:00",
-      type: "video",
-      videoUrl: "",
-      resources: []
-    };
-    setScModules(scModules.map(m => {
-      if (m.id === modId) {
-        return { ...m, lectures: [...m.lectures, newLec] };
-      }
-      return m;
-    }));
-  };
-
-  const updateStudentLectureField = (modId: string, lecId: string, field: keyof Lecture, value: any) => {
-    setScModules(scModules.map(m => {
-      if (m.id === modId) {
-        return {
-          ...m,
-          lectures: m.lectures.map(l => {
-            if (l.id === lecId) {
-              return { ...l, [field]: value };
-            }
-            return l;
-          })
-        };
-      }
-      return m;
-    }));
-  };
-
-  const deleteStudentLecture = (modId: string, lecId: string) => {
-    setScModules(scModules.map(m => {
-      if (m.id === modId) {
-        return { ...m, lectures: m.lectures.filter(l => l.id !== lecId) };
-      }
-      return m;
-    }));
-  };
-
-  const moveStudentLecture = (modId: string, index: number, direction: "up" | "down") => {
-    const newIndex = direction === "up" ? index - 1 : index + 1;
-    setScModules(scModules.map(m => {
-      if (m.id === modId) {
-        if (newIndex < 0 || newIndex >= m.lectures.length) return m;
-        const list = [...m.lectures];
-        const temp = list[index];
-        list[index] = list[newIndex];
-        list[newIndex] = temp;
-        return { ...m, lectures: list };
-      }
-      return m;
-    }));
-  };
-
-  const addStudentResource = (modId: string, lecId: string) => {
-    setScModules(scModules.map(m => {
-      if (m.id === modId) {
-        return {
-          ...m,
-          lectures: m.lectures.map(l => {
-            if (l.id === lecId) {
-              const resources = l.resources ? [...l.resources] : [];
-              return { ...l, resources: [...resources, { name: "Ressource", url: "" }] };
-            }
-            return l;
-          })
-        };
-      }
-      return m;
-    }));
-  };
-
-  const updateStudentResourceField = (modId: string, lecId: string, resIndex: number, field: "name" | "url", value: string) => {
-    setScModules(scModules.map(m => {
-      if (m.id === modId) {
-        return {
-          ...m,
-          lectures: m.lectures.map(l => {
-            if (l.id === lecId) {
-              const resources = l.resources ? [...l.resources] : [];
-              if (resources[resIndex]) {
-                resources[resIndex] = { ...resources[resIndex], [field]: value };
-              }
-              return { ...l, resources };
-            }
-            return l;
-          })
-        };
-      }
-      return m;
-    }));
-  };
-
-  const deleteStudentResource = (modId: string, lecId: string, resIndex: number) => {
-    setScModules(scModules.map(m => {
-      if (m.id === modId) {
-        return {
-          ...m,
-          lectures: m.lectures.map(l => {
-            if (l.id === lecId) {
-              const resources = l.resources ? l.resources.filter((_, idx) => idx !== resIndex) : [];
-              return { ...l, resources };
-            }
-            return l;
-          })
-        };
-      }
-      return m;
-    }));
-  };
-
   // Helper to reset all module form fields
   const resetModuleForm = () => {
     setModalTab(1);
@@ -717,6 +502,7 @@ export default function AdminPage() {
     setNewModuleDebouches("");
     setNewModulePlanning([]);
     setNewModuleProgramme([{ title: "", points: "" }]);
+    setNewModuleSessions([]);
   };
 
   // 1. Formations CRUD
@@ -827,6 +613,7 @@ export default function AdminPage() {
     setNewModuleProgramme(
       d?.programme?.map(p => ({ title: p.title, points: p.points.join("\n") })) ?? [{ title: "", points: "" }]
     );
+    setNewModuleSessions(mod.sessions || []);
     setEditingModule({ catIndex, modIndex, oldTitle: mod.titre });
     setShowAddModuleModal(true);
   };
@@ -1152,6 +939,37 @@ export default function AdminPage() {
     );
   }
 
+  // --- UPCOMING CLASSES CALCULATION ---
+  const upcomingClasses = useMemo(() => {
+    const joursSemaine = ["Dimanche", "Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi"];
+    const todayIndex = new Date().getDay();
+    const tomorrowIndex = (todayIndex + 1) % 7;
+    const todayName = joursSemaine[todayIndex];
+    const tomorrowName = joursSemaine[tomorrowIndex];
+
+    const upcoming: { catIndex: number, modIndex: number, modTitre: string, jour: string, horaire: string }[] = [];
+
+    formations.forEach((cat, catIndex) => {
+      cat.modules.forEach((mod, modIndex) => {
+        if (mod.details?.planning) {
+          mod.details.planning.forEach((p: any) => {
+            if (p.jour.toLowerCase() === todayName.toLowerCase() || p.jour.toLowerCase() === tomorrowName.toLowerCase()) {
+              upcoming.push({
+                catIndex,
+                modIndex,
+                modTitre: mod.titre,
+                jour: p.jour,
+                horaire: p.horaire
+              });
+            }
+          });
+        }
+      });
+    });
+
+    return upcoming;
+  }, [formations]);
+
   return (
     <div className="h-screen bg-[var(--color-gray)] flex font-sans text-gray-800 overflow-hidden">
       
@@ -1211,7 +1029,7 @@ export default function AdminPage() {
                     title: "Contenu & Offres",
                     items: [
                       { id: "formations", label: "Formations & Modules", icon: <BookOpen className="w-4 h-4" /> },
-                      { id: "student-courses", label: "Cours Espace Étudiant", icon: <BookOpen className="w-4 h-4" /> },
+                      
                       { id: "actualites", label: "Blog & Actualités", icon: <Newspaper className="w-4 h-4" /> },
                       { id: "testimonials", label: "Témoignages Alumni", icon: <HeartHandshake className="w-4 h-4" /> },
                       { id: "galerie", label: "Galerie Médias", icon: <ImageIcon className="w-4 h-4" /> },
@@ -1317,7 +1135,7 @@ export default function AdminPage() {
               title: "Contenu & Offres",
               items: [
                 { id: "formations", label: "Formations & Modules", icon: <BookOpen className="w-4 h-4" /> },
-                { id: "student-courses", label: "Cours Espace Étudiant", icon: <BookOpen className="w-4 h-4" /> },
+                
                 { id: "actualites", label: "Blog & Actualités", icon: <Newspaper className="w-4 h-4" /> },
                 { id: "testimonials", label: "Témoignages Alumni", icon: <HeartHandshake className="w-4 h-4" /> },
                 { id: "galerie", label: "Galerie Médias", icon: <ImageIcon className="w-4 h-4" /> },
@@ -1410,7 +1228,7 @@ export default function AdminPage() {
                 {activeTab === "inscriptions" && "Suivi des Inscriptions & Devis"}
                 {activeTab === "students" && "Gestion des Comptes Étudiants"}
                 {activeTab === "formations" && "Gestion des Formations"}
-                {activeTab === "student-courses" && "Cours Espace Étudiant"}
+                {false && "Cours Espace Étudiant"}
                 {activeTab === "actualites" && "Éditeur du Blog & Actualités"}
                 {activeTab === "testimonials" && "Gestion des Témoignages"}
                 {activeTab === "messages" && "Messages clients"}
@@ -1445,6 +1263,42 @@ export default function AdminPage() {
                 exit={{ opacity: 0 }}
                 className="space-y-8"
               >
+                
+                {/* Upcoming Classes Alerts */}
+                {upcomingClasses.length > 0 && (
+                  <div className="bg-amber-50 border border-amber-200 p-6 shadow-sm relative overflow-hidden">
+                    <div className="absolute top-0 left-0 w-1 h-full bg-amber-500"></div>
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="bg-amber-100 p-2 rounded-full">
+                        <Calendar className="w-5 h-5 text-amber-600" />
+                      </div>
+                      <div>
+                        <h3 className="text-sm font-bold text-amber-900 uppercase tracking-widest">Séances Imminentes (24h)</h3>
+                        <p className="text-xs text-amber-700">Ces formations ont cours aujourd'hui ou demain. Avez-vous ajouté les liens Zoom ?</p>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {upcomingClasses.map((uc, i) => (
+                        <div key={i} className="bg-white border border-amber-200 p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 hover:shadow-md transition-shadow">
+                          <div>
+                            <p className="text-xs font-bold text-gray-900 line-clamp-1">{uc.modTitre}</p>
+                            <p className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold mt-1">Prévu le : <span className="text-amber-600">{uc.jour} à {uc.horaire}</span></p>
+                          </div>
+                          <button
+                            onClick={() => {
+                              startEditModule(uc.catIndex, uc.modIndex);
+                              setTimeout(() => setModalTab(5 as any), 50);
+                            }}
+                            className="w-full sm:w-auto px-4 py-2 bg-gray-900 hover:bg-amber-600 text-white text-[10px] uppercase font-bold tracking-wider transition-colors whitespace-nowrap"
+                          >
+                            Ajouter la Séance
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
                 {/* Stats Grid */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                   {[
@@ -1943,7 +1797,7 @@ export default function AdminPage() {
 
                                 // Calculate progress
                                 let totalLectures = 0;
-                                matchedCourse.modules.forEach((m: CourseModule) => totalLectures += m.lectures.length);
+                                matchedCourse.modules.forEach((m: CourseModule) => totalLectures += m.sessions.length);
                                 const completedCount = selectedStudent.progress[courseId]?.length || 0;
                                 const progressPct = totalLectures > 0 ? Math.round((completedCount / totalLectures) * 100) : 0;
 
@@ -2151,105 +2005,7 @@ export default function AdminPage() {
             {/* ====================================
                 TAB: COURS ESPACE ETUDIANT
             ==================================== */}
-            {activeTab === "student-courses" && (
-              <motion.div
-                key="student-courses"
-                initial={{ opacity: 0, y: 15 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0 }}
-                className="space-y-6"
-              >
-                {/* Actions header bar */}
-                <div className="bg-white border border-gray-200 p-4 shadow-sm flex justify-between items-center">
-                  <span className="text-xs font-bold text-gray-500 uppercase tracking-widest">{studentCourses.length} Cours Espace Étudiant enregistrés</span>
-                  <button
-                    onClick={() => {
-                      resetStudentCourseForm();
-                      setShowStudentCourseModal(true);
-                    }}
-                    className="flex items-center gap-2 px-4 py-2 bg-[var(--color-primary)] hover:bg-[var(--color-accent)] text-white text-xs font-bold uppercase tracking-wider transition-colors"
-                  >
-                    <Plus className="w-4 h-4" /> Créer un nouveau cours
-                  </button>
-                </div>
-
-                {/* Courses Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {studentCourses.map((course) => {
-                    let totalLec = 0;
-                    if (course.modules) {
-                      course.modules.forEach(m => totalLec += m.lectures ? m.lectures.length : 0);
-                    }
-                    return (
-                      <div key={course.id} className="bg-white border border-gray-200 shadow-sm flex flex-col justify-between group">
-                        <div>
-                          {/* Course Cover */}
-                          <div className="relative aspect-video bg-gray-100 border-b border-gray-200 overflow-hidden">
-                            {course.image ? (
-                              <img src={course.image} alt={course.title} className="w-full h-full object-cover" />
-                            ) : (
-                              <div className="w-full h-full flex items-center justify-center text-gray-300">
-                                <BookOpen className="w-12 h-12" />
-                              </div>
-                            )}
-                            <div className="absolute top-2 left-2 bg-[var(--color-primary)] text-white text-[8px] font-black uppercase tracking-widest px-2 py-0.5">
-                              {course.category}
-                            </div>
-                          </div>
-
-                          {/* Course details */}
-                          <div className="p-5 space-y-2">
-                            <h4 className="font-heading font-black text-sm text-gray-900 line-clamp-2 leading-tight">
-                              {course.title}
-                            </h4>
-                            <p className="text-xs text-gray-400 font-mono">ID: {course.id}</p>
-                            <p className="text-[11px] text-gray-505 line-clamp-2 leading-relaxed">
-                              {course.description}
-                            </p>
-                            
-                            <div className="pt-2 flex flex-wrap gap-2 text-[10px] font-bold text-gray-500">
-                              <span className="bg-gray-50 px-2 py-1 rounded-none border border-gray-200">
-                                {course.duration}
-                              </span>
-                              <span className="bg-gray-50 px-2 py-1 rounded-none border border-gray-200">
-                                {course.modules ? course.modules.length : 0} Modules
-                              </span>
-                              <span className="bg-gray-50 px-2 py-1 rounded-none border border-gray-200">
-                                {totalLec} Leçons
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Price & Actions footer */}
-                        <div className="px-5 py-4 bg-gray-50/50 border-t border-gray-100 flex items-center justify-between">
-                          <span className="text-xs font-black text-[var(--color-accent)]">
-                            {course.price.toLocaleString('fr-GN')} FG
-                          </span>
-
-                          <div className="flex items-center gap-1 opacity-60 group-hover:opacity-100 transition-opacity">
-                            <button
-                              onClick={() => startEditStudentCourse(course)}
-                              className="p-1.5 text-gray-500 hover:text-[var(--color-primary)] border border-transparent hover:border-gray-200 bg-white"
-                              title="Modifier le cours et son programme"
-                            >
-                              <Edit3 className="w-3.5 h-3.5" />
-                            </button>
-                            <button
-                              onClick={() => handleDeleteStudentCourse(course.id)}
-                              className="p-1.5 text-gray-500 hover:text-red-650 border border-transparent hover:border-gray-200 bg-white"
-                              title="Supprimer définitivement"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </motion.div>
-            )}
+            
 
             {/* ====================================
                 TAB: ACTUALITES (BLOG)
@@ -2789,448 +2545,7 @@ export default function AdminPage() {
       
       {/* Modal: Add/Edit Module Multi-Tab */}
       {/* Modal: Add/Edit Student Course */}
-      {showStudentCourseModal && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="bg-white w-full max-w-4xl border border-gray-200 shadow-2xl text-gray-800 rounded-none flex flex-col"
-            style={{ maxHeight: '90vh' }}
-          >
-            {/* Header */}
-            <div className="flex justify-between items-center px-6 py-4 border-b border-gray-100 flex-shrink-0">
-              <h3 className="text-base font-heading font-bold text-[var(--color-primary)]">
-                {editingStudentCourseId !== null ? "Modifier le cours étudiant" : "Créer un nouveau cours étudiant"}
-              </h3>
-              <button
-                disabled={isSavingStudentCourse}
-                onClick={() => { setShowStudentCourseModal(false); resetStudentCourseForm(); }}
-                className="text-gray-400 hover:text-gray-650 disabled:opacity-30"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            {/* Modal Tabs */}
-            <div className="flex border-b border-gray-100 flex-shrink-0 bg-gray-50">
-              {(["1. Informations Générales", "2. Curriculum & Sommaire"] as const).map((tab, i) => (
-                <button
-                  key={tab}
-                  type="button"
-                  onClick={() => setStudentCourseModalTab((i + 1) as 1 | 2)}
-                  className={`flex-1 text-[10px] font-bold uppercase tracking-wider py-3 px-2 border-b-2 transition-colors ${
-                    studentCourseModalTab === i + 1
-                      ? "border-[var(--color-primary)] text-[var(--color-primary)] bg-white"
-                      : "border-transparent text-gray-400 hover:text-gray-600"
-                  }`}
-                >
-                  {tab}
-                </button>
-              ))}
-            </div>
-
-            {/* Modal Form */}
-            <form onSubmit={handleSaveStudentCourse} className="flex flex-col flex-1 overflow-hidden">
-              <div className="flex-grow overflow-y-auto px-6 py-5 space-y-4">
-                
-                {/* TAB 1: General Info */}
-                {studentCourseModalTab === 1 && (
-                  <div className="space-y-4">
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-1.5">ID Unique / Slug (requis)</label>
-                        <input
-                          type="text"
-                          required
-                          disabled={editingStudentCourseId !== null || isSavingStudentCourse}
-                          className="w-full bg-slate-50 border border-gray-250 px-3 py-2 text-xs rounded-none focus:outline-none focus:border-[var(--color-primary)] disabled:opacity-60"
-                          placeholder="Ex: powerbi-adv"
-                          value={scId}
-                          onChange={(e) => setScId(e.target.value)}
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-1.5">Catégorie (requis)</label>
-                        <input
-                          type="text"
-                          required
-                          disabled={isSavingStudentCourse}
-                          className="w-full bg-slate-50 border border-gray-250 px-3 py-2 text-xs rounded-none focus:outline-none focus:border-[var(--color-primary)]"
-                          placeholder="Ex: Analyse des Données"
-                          value={scCategory}
-                          onChange={(e) => setScCategory(e.target.value)}
-                        />
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-1.5">Titre du cours (requis)</label>
-                        <input
-                          type="text"
-                          required
-                          disabled={isSavingStudentCourse}
-                          className="w-full bg-slate-50 border border-gray-250 px-3 py-2 text-xs rounded-none focus:outline-none focus:border-[var(--color-primary)]"
-                          placeholder="Ex: Tableau de bord avec PowerBI"
-                          value={scTitle}
-                          onChange={(e) => setScTitle(e.target.value)}
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-1.5">Durée affichée (requis)</label>
-                        <input
-                          type="text"
-                          required
-                          disabled={isSavingStudentCourse}
-                          className="w-full bg-slate-50 border border-gray-250 px-3 py-2 text-xs rounded-none focus:outline-none focus:border-[var(--color-primary)]"
-                          placeholder="Ex: 40 heures"
-                          value={scDuration}
-                          onChange={(e) => setScDuration(e.target.value)}
-                        />
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-1.5">Prix (GNF, requis)</label>
-                        <input
-                          type="number"
-                          required
-                          disabled={isSavingStudentCourse}
-                          className="w-full bg-slate-50 border border-gray-250 px-3 py-2 text-xs rounded-none focus:outline-none focus:border-[var(--color-primary)]"
-                          placeholder="Ex: 1500000"
-                          value={scPrice}
-                          onChange={(e) => setScPrice(e.target.value === "" ? "" : Number(e.target.value))}
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-1.5">Image de couverture (URL ou uploader)</label>
-                        <MediaUploader
-                          accept="image"
-                          value={scImage}
-                          onChange={(url) => setScImage(url)}
-                          label="Uploader une couverture"
-                        />
-                      </div>
-                    </div>
-
-                    <div>
-                      <label className="block text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-1.5">Description (requis)</label>
-                      <textarea
-                        required
-                        rows={4}
-                        disabled={isSavingStudentCourse}
-                        className="w-full bg-slate-50 border border-gray-250 px-3 py-2 text-xs rounded-none focus:outline-none focus:border-[var(--color-primary)] font-sans leading-relaxed"
-                        placeholder="Maîtrisez PowerBI Desktop et Services pour concevoir..."
-                        value={scDescription}
-                        onChange={(e) => setScDescription(e.target.value)}
-                      />
-                    </div>
-                  </div>
-                )}
-
-                {/* TAB 2: Modules and Lessons editor */}
-                {studentCourseModalTab === 2 && (
-                  <div className="space-y-6">
-                    <div className="flex justify-between items-center border-b border-gray-150 pb-3">
-                      <div>
-                        <h4 className="text-xs font-bold text-gray-800 uppercase tracking-widest">Sommaire des modules</h4>
-                        <p className="text-[10px] text-gray-400 mt-1">Créez des chapitres et ajoutez des cours écrits, vidéos ou visioconférences en direct.</p>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={addStudentModule}
-                        className="px-3.5 py-2 border border-[var(--color-primary)] text-[var(--color-primary)] hover:bg-[var(--color-primary)] hover:text-white transition-colors text-[10px] font-bold uppercase tracking-wider flex items-center gap-1.5 rounded-none"
-                      >
-                        <Plus className="w-3.5 h-3.5" /> Ajouter un module
-                      </button>
-                    </div>
-
-                    {scModules.length === 0 ? (
-                      <div className="p-8 border border-dashed border-gray-200 text-center text-xs text-gray-400 rounded-none bg-slate-50/50">
-                        Aucun module créé pour le moment. Cliquez sur "Ajouter un module" ci-dessus.
-                      </div>
-                    ) : (
-                      <div className="space-y-5">
-                        {scModules.map((module, mIdx) => (
-                          <div key={module.id} className="border border-gray-200 bg-slate-50/30 p-5 rounded-none space-y-4 shadow-sm relative">
-                            {/* Module header actions */}
-                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-gray-150 pb-3">
-                              <div className="flex-grow">
-                                <span className="block text-[8px] font-extrabold uppercase tracking-widest text-gray-400 mb-1">Module #{mIdx + 1}</span>
-                                <input
-                                  type="text"
-                                  required
-                                  className="w-full bg-white border border-gray-250 px-3 py-1.5 text-xs font-bold text-gray-900 rounded-none focus:outline-none focus:border-[var(--color-primary)]"
-                                  placeholder="Nom du module (ex: Module 1 : Introduction)"
-                                  value={module.title}
-                                  onChange={(e) => updateStudentModuleTitle(module.id, e.target.value)}
-                                />
-                              </div>
-
-                              <div className="flex items-center gap-1 shrink-0 self-end sm:self-center">
-                                <button
-                                  type="button"
-                                  disabled={mIdx === 0}
-                                  onClick={() => moveStudentModule(mIdx, "up")}
-                                  className="p-1.5 border border-gray-200 bg-white hover:bg-slate-100 disabled:opacity-40"
-                                  title="Monter"
-                                >
-                                  ▲
-                                </button>
-                                <button
-                                  type="button"
-                                  disabled={mIdx === scModules.length - 1}
-                                  onClick={() => moveStudentModule(mIdx, "down")}
-                                  className="p-1.5 border border-gray-200 bg-white hover:bg-slate-100 disabled:opacity-40"
-                                  title="Descendre"
-                                >
-                                  ▼
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => deleteStudentModule(module.id)}
-                                  className="px-2.5 py-1.5 bg-red-50 hover:bg-red-100 text-red-650 border border-red-200 text-[9px] font-bold uppercase tracking-wider transition-colors flex items-center gap-1 rounded-none"
-                                >
-                                  <Trash2 className="w-3.5 h-3.5" /> Supprimer
-                                </button>
-                              </div>
-                            </div>
-
-                            {/* Lectures list within module */}
-                            <div className="space-y-4 pl-4 border-l-2 border-gray-200">
-                              <div className="flex justify-between items-center">
-                                <h5 className="text-[9px] font-extrabold uppercase tracking-widest text-gray-400">Leçons du module ({module.lectures ? module.lectures.length : 0})</h5>
-                                <button
-                                  type="button"
-                                  onClick={() => addStudentLecture(module.id)}
-                                  className="px-2.5 py-1.5 border border-blue-600 text-blue-600 hover:bg-blue-50 text-[9px] font-bold uppercase tracking-wider transition-colors flex items-center gap-1 rounded-none bg-white"
-                                >
-                                  <Plus className="w-3 h-3" /> Ajouter une leçon
-                                </button>
-                              </div>
-
-                              {(!module.lectures || module.lectures.length === 0) ? (
-                                <p className="text-[10px] text-gray-400 italic py-1">Aucune leçon dans ce module. Ajoutez-en une.</p>
-                              ) : (
-                                <div className="space-y-4">
-                                  {module.lectures.map((lecture, lIdx) => (
-                                    <div key={lecture.id} className="bg-white border border-gray-150 p-4 rounded-none space-y-3 shadow-inner relative">
-                                      {/* Lecture title row */}
-                                      <div className="flex flex-col sm:flex-row justify-between gap-3 border-b border-slate-50 pb-2.5">
-                                        <div className="flex-grow">
-                                          <span className="block text-[8px] font-bold uppercase tracking-wider text-gray-400 mb-1">Leçon #{lIdx + 1}</span>
-                                          <input
-                                            type="text"
-                                            required
-                                            className="w-full bg-slate-50 border border-gray-200 px-3 py-1.5 text-xs text-gray-800 rounded-none focus:outline-none focus:border-blue-600"
-                                            placeholder="Titre de la leçon (ex: 1.1 Bienvenue et Installation)"
-                                            value={lecture.title}
-                                            onChange={(e) => updateStudentLectureField(module.id, lecture.id, "title", e.target.value)}
-                                          />
-                                        </div>
-
-                                        <div className="flex items-center gap-1.5 shrink-0 self-end sm:self-center">
-                                          <button
-                                            type="button"
-                                            disabled={lIdx === 0}
-                                            onClick={() => moveStudentLecture(module.id, lIdx, "up")}
-                                            className="p-1 border border-gray-100 bg-white hover:bg-slate-50 disabled:opacity-40"
-                                          >
-                                            ▲
-                                          </button>
-                                          <button
-                                            type="button"
-                                            disabled={lIdx === module.lectures.length - 1}
-                                            onClick={() => moveStudentLecture(module.id, lIdx, "down")}
-                                            className="p-1 border border-gray-100 bg-white hover:bg-slate-50 disabled:opacity-40"
-                                          >
-                                            ▼
-                                          </button>
-                                          <button
-                                            type="button"
-                                            onClick={() => deleteStudentLecture(module.id, lecture.id)}
-                                            className="p-1 hover:bg-red-50 text-red-500 border border-transparent hover:border-red-200"
-                                            title="Supprimer leçon"
-                                          >
-                                            <Trash2 className="w-3.5 h-3.5" />
-                                          </button>
-                                        </div>
-                                      </div>
-
-                                      {/* Duration and Type selection */}
-                                      <div className="grid grid-cols-2 gap-3">
-                                        <div>
-                                          <label className="block text-[8px] font-extrabold uppercase tracking-wider text-gray-400 mb-1">Durée (ex: 12:15 ou Lecture (10 min))</label>
-                                          <input
-                                            type="text"
-                                            required
-                                            className="w-full bg-slate-50 border border-gray-200 px-3 py-1.5 text-[11px] rounded-none focus:outline-none focus:border-blue-500"
-                                            placeholder="12:15"
-                                            value={lecture.duration}
-                                            onChange={(e) => updateStudentLectureField(module.id, lecture.id, "duration", e.target.value)}
-                                          />
-                                        </div>
-                                        <div>
-                                          <label className="block text-[8px] font-extrabold uppercase tracking-wider text-gray-400 mb-1">Type de Leçon</label>
-                                          <select
-                                            className="w-full bg-slate-50 border border-gray-200 px-3 py-1.5 text-[11px] rounded-none focus:outline-none focus:border-blue-500"
-                                            value={lecture.type}
-                                            onChange={(e) => updateStudentLectureField(module.id, lecture.id, "type", e.target.value)}
-                                          >
-                                            <option value="video">Vidéo en streaming (YouTube/Cloudinary)</option>
-                                            <option value="text">Texte / Guide écrit (HTML)</option>
-                                            <option value="live">Live interactif (Zoom / Google Meet)</option>
-                                          </select>
-                                        </div>
-                                      </div>
-
-                                      {/* Type specific fields */}
-                                      {lecture.type === "video" && (
-                                        <div>
-                                          <label className="block text-[8px] font-extrabold uppercase tracking-wider text-gray-400 mb-1">Lien de la Vidéo (URL)</label>
-                                          <input
-                                            type="url"
-                                            required
-                                            className="w-full bg-slate-50 border border-gray-200 px-3 py-1.5 text-[11px] rounded-none focus:outline-none focus:border-blue-500 font-mono"
-                                            placeholder="https://www.youtube.com/watch?v=..."
-                                            value={lecture.videoUrl || ""}
-                                            onChange={(e) => updateStudentLectureField(module.id, lecture.id, "videoUrl", e.target.value)}
-                                          />
-                                        </div>
-                                      )}
-
-                                      {lecture.type === "live" && (
-                                        <div>
-                                          <label className="block text-[8px] font-extrabold uppercase tracking-wider text-gray-400 mb-1">Lien Google Meet / Zoom (URL)</label>
-                                          <input
-                                            type="url"
-                                            required
-                                            className="w-full bg-slate-50 border border-gray-200 px-3 py-1.5 text-[11px] rounded-none focus:outline-none focus:border-blue-500 font-mono"
-                                            placeholder="https://meet.google.com/abc-defg-hij"
-                                            value={lecture.meetUrl || ""}
-                                            onChange={(e) => updateStudentLectureField(module.id, lecture.id, "meetUrl", e.target.value)}
-                                          />
-                                        </div>
-                                      )}
-
-                                      {lecture.type === "text" && (
-                                        <div>
-                                          <label className="block text-[8px] font-extrabold uppercase tracking-wider text-gray-400 mb-1">Contenu textuel de la leçon (HTML supporté)</label>
-                                          <textarea
-                                            rows={5}
-                                            required
-                                            className="w-full bg-slate-50 border border-gray-200 px-3 py-1.5 text-[11px] rounded-none focus:outline-none focus:border-blue-500 font-mono leading-normal"
-                                            placeholder="<h3>Qu'est-ce que ...</h3><p>...</p>"
-                                            value={lecture.textContent || ""}
-                                            onChange={(e) => updateStudentLectureField(module.id, lecture.id, "textContent", e.target.value)}
-                                          />
-                                        </div>
-                                      )}
-
-                                      {/* Resources section per lecture */}
-                                      <div className="pt-2.5 border-t border-slate-50 space-y-2">
-                                        <div className="flex justify-between items-center">
-                                          <label className="block text-[8px] font-extrabold uppercase tracking-wider text-gray-450">Supports et ressources ({lecture.resources ? lecture.resources.length : 0})</label>
-                                          <button
-                                            type="button"
-                                            onClick={() => addStudentResource(module.id, lecture.id)}
-                                            className="text-[8px] font-extrabold uppercase tracking-widest text-blue-600 hover:underline"
-                                          >
-                                            + Ajouter un fichier
-                                          </button>
-                                        </div>
-
-                                        {lecture.resources && lecture.resources.length > 0 && (
-                                          <div className="space-y-2">
-                                            {lecture.resources.map((res, rIdx) => (
-                                              <div key={rIdx} className="flex gap-2 items-center">
-                                                <input
-                                                  type="text"
-                                                  required
-                                                  className="w-1/3 bg-slate-50 border border-gray-200 px-2 py-1 text-[10px] rounded-none focus:outline-none"
-                                                  placeholder="Nom (ex: Support PDF)"
-                                                  value={res.name}
-                                                  onChange={(e) => updateStudentResourceField(module.id, lecture.id, rIdx, "name", e.target.value)}
-                                                />
-                                                <input
-                                                  type="text"
-                                                  required
-                                                  className="flex-grow bg-slate-50 border border-gray-200 px-2 py-1 text-[10px] rounded-none focus:outline-none"
-                                                  placeholder="URL du document (ou #)"
-                                                  value={res.url}
-                                                  onChange={(e) => updateStudentResourceField(module.id, lecture.id, rIdx, "url", e.target.value)}
-                                                />
-                                                <button
-                                                  type="button"
-                                                  onClick={() => deleteStudentResource(module.id, lecture.id, rIdx)}
-                                                  className="text-red-500 hover:text-red-700 text-xs font-bold px-1"
-                                                >
-                                                  ×
-                                                </button>
-                                              </div>
-                                            ))}
-                                          </div>
-                                        )}
-                                      </div>
-                                    </div>
-                                  ))}
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-
-              {/* Modal Footer Actions */}
-              <div className="px-6 py-4 border-t border-gray-100 bg-gray-50 flex items-center justify-between flex-shrink-0">
-                <div className="flex gap-2">
-                  {studentCourseModalTab === 2 && (
-                    <button
-                      type="button"
-                      onClick={() => setStudentCourseModalTab(1)}
-                      className="px-4 py-2 bg-white border border-gray-300 hover:bg-slate-50 text-gray-700 text-xs font-bold uppercase tracking-wider rounded-none transition-all"
-                    >
-                      Précédent
-                    </button>
-                  )}
-                  {studentCourseModalTab === 1 && (
-                    <button
-                      type="button"
-                      onClick={() => setStudentCourseModalTab(2)}
-                      className="px-4 py-2 bg-[var(--color-primary)] hover:bg-[var(--color-primary)]/95 text-white text-xs font-bold uppercase tracking-wider rounded-none transition-all"
-                    >
-                      Suivant : Curriculum →
-                    </button>
-                  )}
-                </div>
-
-                <div className="flex gap-2">
-                  <button
-                    type="button"
-                    disabled={isSavingStudentCourse}
-                    onClick={() => { setShowStudentCourseModal(false); resetStudentCourseForm(); }}
-                    className="px-4 py-2 bg-white border border-gray-300 hover:bg-slate-50 text-gray-750 text-xs font-bold uppercase tracking-wider rounded-none transition-all disabled:opacity-40"
-                  >
-                    Annuler
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={isSavingStudentCourse}
-                    className="px-5 py-2 bg-[var(--color-accent)] hover:bg-[var(--color-accent)]/90 text-white text-xs font-bold uppercase tracking-wider rounded-none transition-all disabled:opacity-40 shadow-sm"
-                  >
-                    {isSavingStudentCourse ? "Enregistrement..." : "Enregistrer le cours"}
-                  </button>
-                </div>
-              </div>
-            </form>
-          </motion.div>
-        </div>
-      )}
+      
 
       {showAddModuleModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
@@ -3256,11 +2571,11 @@ export default function AdminPage() {
 
             {/* Tab Bar */}
             <div className="flex border-b border-gray-100 flex-shrink-0 bg-gray-50">
-              {(["Infos Générales", "Fiche Technique", "Pédagogie", "Programme"] as const).map((tab, i) => (
+              {(["Infos Générales", "Fiche Technique", "Pédagogie", "Programme", "Séances & Agenda"] as const).map((tab, i) => (
                 <button
                   key={tab}
                   type="button"
-                  onClick={() => setModalTab((i + 1) as 1|2|3|4)}
+                  onClick={() => setModalTab((i + 1) as 1|2|3|4|5)}
                   className={`flex-1 text-[10px] font-bold uppercase tracking-wider py-3 px-2 border-b-2 transition-colors ${
                     modalTab === i + 1
                       ? "border-[var(--color-primary)] text-[var(--color-primary)] bg-white"
@@ -3468,6 +2783,56 @@ export default function AdminPage() {
                 )}
 
                 {/* === ONGLET 4: Programme Détaillé === */}
+                
+                {modalTab === 5 && (
+                  <div className="space-y-6">
+                    <div className="flex justify-between items-center bg-gray-50 p-4 border border-gray-200">
+                      <div>
+                        <h4 className="text-xs font-bold text-gray-900 uppercase">Séances & Agenda</h4>
+                        <p className="text-[10px] text-gray-500">Ajoutez les dates, heures, lieux et liens Zoom des séances.</p>
+                      </div>
+                      <button type="button" onClick={() => setNewModuleSessions([...newModuleSessions, { id: 'session-'+Date.now(), title: 'Nouvelle séance', date: new Date().toISOString(), duration: '2 heures', location: 'Siège CFIG', meetUrl: '', resources: [] }])} className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-900 text-white text-[10px] uppercase font-bold hover:bg-[var(--color-primary)] transition-colors">
+                        <Plus className="w-3.5 h-3.5" /> Nouvelle Séance
+                      </button>
+                    </div>
+
+                    <div className="space-y-4">
+                      {newModuleSessions.map((session, sIdx) => (
+                        <div key={session.id} className="border border-gray-200 p-4 relative bg-slate-50">
+                          <button type="button" onClick={() => setNewModuleSessions(newModuleSessions.filter((_, i) => i !== sIdx))} className="absolute top-4 right-4 text-gray-400 hover:text-red-600 transition-colors">
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                              <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1">Titre de la séance</label>
+                              <input type="text" value={session.title} onChange={e => { const list = [...newModuleSessions]; list[sIdx].title = e.target.value; setNewModuleSessions(list); }} className="w-full border border-gray-300 px-3 py-2 text-sm focus:border-[var(--color-primary)] outline-none bg-white" placeholder="Ex: Introduction à Excel" />
+                            </div>
+                            <div>
+                              <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1">Date et Heure (Format ISO)</label>
+                              <input type="datetime-local" value={session.date.slice(0,16)} onChange={e => { const list = [...newModuleSessions]; list[sIdx].date = new Date(e.target.value).toISOString(); setNewModuleSessions(list); }} className="w-full border border-gray-300 px-3 py-2 text-sm focus:border-[var(--color-primary)] outline-none bg-white" />
+                            </div>
+                            <div>
+                              <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1">Durée</label>
+                              <input type="text" value={session.duration} onChange={e => { const list = [...newModuleSessions]; list[sIdx].duration = e.target.value; setNewModuleSessions(list); }} className="w-full border border-gray-300 px-3 py-2 text-sm focus:border-[var(--color-primary)] outline-none bg-white" placeholder="Ex: 2 heures" />
+                            </div>
+                            <div>
+                              <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1">Lieu</label>
+                              <input type="text" value={session.location} onChange={e => { const list = [...newModuleSessions]; list[sIdx].location = e.target.value; setNewModuleSessions(list); }} className="w-full border border-gray-300 px-3 py-2 text-sm focus:border-[var(--color-primary)] outline-none bg-white" placeholder="Ex: Salle A, Siège CFIG" />
+                            </div>
+                            <div className="md:col-span-2">
+                              <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1">Lien Zoom / Meet (Optionnel)</label>
+                              <input type="url" value={session.meetUrl || ""} onChange={e => { const list = [...newModuleSessions]; list[sIdx].meetUrl = e.target.value; setNewModuleSessions(list); }} className="w-full border border-gray-300 px-3 py-2 text-sm focus:border-[var(--color-primary)] outline-none bg-white" placeholder="Ex: https://zoom.us/j/123456" />
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                      {newModuleSessions.length === 0 && (
+                        <p className="text-xs text-gray-400 text-center py-4 italic">Aucune séance définie. Les étudiants ne verront aucun agenda pour ce cours.</p>
+                      )}
+                    </div>
+                  </div>
+                )}
+
                 {modalTab === 4 && (
                   <div className="space-y-4">
                     <p className="text-[10px] text-gray-400">Ajoutez chaque module du programme. Les points de contenu sont séparés par des retours à  la ligne.</p>
@@ -3526,13 +2891,13 @@ export default function AdminPage() {
                 </div>
                 <div className="flex gap-2">
                   {modalTab > 1 && (
-                    <button type="button" onClick={() => setModalTab((modalTab - 1) as 1|2|3|4)}
+                    <button type="button" onClick={() => setModalTab((modalTab - 1) as 1|2|3|4|5)}
                       className="px-4 py-2 border border-gray-300 text-xs font-bold uppercase tracking-wider hover:bg-gray-50 text-gray-600 rounded-none">
                       Précédent
                     </button>
                   )}
-                  {modalTab < 4 ? (
-                    <button type="button" onClick={() => setModalTab((modalTab + 1) as 1|2|3|4)}
+                  {modalTab < 5 ? (
+                    <button type="button" onClick={() => setModalTab((modalTab + 1) as 1|2|3|4|5)}
                       className="px-4 py-2 bg-[var(--color-accent)] text-white text-xs font-bold uppercase tracking-wider hover:bg-[var(--color-primary)] transition-colors rounded-none">
                       Suivant
                     </button>
