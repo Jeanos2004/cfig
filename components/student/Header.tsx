@@ -9,6 +9,7 @@ import { auth } from "@/lib/firebase";
 import { studentDb, StudentProfile } from "@/lib/studentDb";
 import { useRouter } from "next/navigation";
 
+
 interface HeaderProps {
   title?: string;
   searchQuery?: string;
@@ -24,73 +25,36 @@ export default function StudentHeader({
 }: HeaderProps) {
   const router = useRouter();
   const [profile, setProfile] = useState<StudentProfile | null>(null);
-  const [messagesOpen, setMessagesOpen] = useState(false);
-  const [notifsOpen, setNotifsOpen] = useState(false);
   
-  const messagesRef = useRef<HTMLDivElement>(null);
+  const [notifsOpen, setNotifsOpen] = useState(false);
+  const [mockNotifications, setMockNotifications] = useState<any[]>([]);
+  useEffect(() => {
+    const fetchNotifs = async () => {
+      const courses = await studentDb.getCourses();
+      const allSessions: any[] = [];
+      courses.forEach(c => c.modules.forEach(m => m.sessions.forEach(s => allSessions.push({course: c, session: s}))));
+      allSessions.sort((a,b) => new Date(a.session.date).getTime() - new Date(b.session.date).getTime());
+      const upcoming = allSessions.filter(s => new Date(s.session.date).getTime() > Date.now()).slice(0, 3);
+      const notifs = upcoming.map((s, i) => ({
+        id: i,
+        type: "live",
+        title: "Rappel : " + s.session.title,
+        desc: s.course.title + " - Prévu le " + new Date(s.session.date).toLocaleDateString("fr-FR") + " à " + new Date(s.session.date).toLocaleTimeString("fr-FR", {hour: "2-digit", minute: "2-digit"}),
+        time: "Bientôt",
+        icon: Bell,
+        color: "bg-blue-50 text-blue-600 border border-blue-100"
+      }));
+      setMockNotifications(notifs);
+    };
+    fetchNotifs();
+  }, []);
+  
+  
   const notifsRef = useRef<HTMLDivElement>(null);
 
-  // Mock Messages Data
-  const mockMessages = [
-    {
-      id: 1,
-      sender: "M. Camara (Formateur)",
-      text: "Bonjour, as-tu réussi à terminer le TP sur les mesures DAX ?",
-      time: "Il y a 10 min",
-      unread: true,
-      initials: "MC"
-    },
-    {
-      id: 2,
-      sender: "Support CFIG Academy",
-      text: "Votre paiement Orange Money a bien été validé.",
-      time: "Il y a 2 h",
-      unread: false,
-      initials: "SP"
-    },
-    {
-      id: 3,
-      sender: "Sékou Bangoura (Étudiant)",
-      text: "Salut, on se retrouve sur Google Meet pour bosser le module ?",
-      time: "Hier",
-      unread: false,
-      initials: "SB"
-    }
-  ];
+  
 
-  // Mock Notifications Data
-  const mockNotifications = [
-    {
-      id: 1,
-      type: "live",
-      title: "Session Live ce soir",
-      desc: "Rejoins le coaching en direct à 18h00 avec le formateur.",
-      time: "Dans 4 h",
-      unread: true,
-      icon: Calendar,
-      color: "text-[var(--color-accent)] bg-blue-50 border border-blue-100"
-    },
-    {
-      id: 2,
-      type: "course",
-      title: "Nouvelle leçon disponible !",
-      desc: "Le chapitre 'Modélisation des Données' a été mis en ligne.",
-      time: "Il y a 1 jour",
-      unread: false,
-      icon: Play,
-      color: "text-blue-600 bg-blue-50"
-    },
-    {
-      id: 3,
-      type: "cert",
-      title: "Certificat disponible !",
-      desc: "Ton certificat PowerBI est prêt à être téléchargé.",
-      time: "Il y a 3 jours",
-      unread: false,
-      icon: Award,
-      color: "text-green-600 bg-green-50"
-    }
-  ];
+  
 
   useEffect(() => {
     const unsub = auth.onAuthStateChanged(async (currentUser) => {
@@ -105,9 +69,7 @@ export default function StudentHeader({
   // Click outside listener to close dropdowns
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
-      if (messagesRef.current && !messagesRef.current.contains(event.target as Node)) {
-        setMessagesOpen(false);
-      }
+      
       if (notifsRef.current && !notifsRef.current.contains(event.target as Node)) {
         setNotifsOpen(false);
       }
@@ -170,63 +132,12 @@ export default function StudentHeader({
       {/* Right Icons: Messages, Notifications, Profile */}
       <div className="flex items-center gap-4 sm:gap-6 ml-auto">
         
-        {/* Messages Dropdown */}
-        <div className="relative" ref={messagesRef}>
-          <button 
-            onClick={() => {
-              setMessagesOpen(!messagesOpen);
-              setNotifsOpen(false);
-            }}
-            className={`w-10 h-10 rounded-none flex items-center justify-center transition-colors relative border border-transparent ${
-              messagesOpen ? "bg-blue-50 text-blue-600 border-gray-200" : "bg-slate-50 text-gray-500 hover:bg-gray-100"
-            }`}
-          >
-            <MessageSquare className="w-4.5 h-4.5" />
-            <span className="absolute top-2.5 right-2.5 w-1.5 h-1.5 bg-blue-500" />
-          </button>
- 
-          {messagesOpen && (
-            <div className="absolute right-0 top-12 w-80 bg-white border border-gray-200 shadow-xl p-4 space-y-3 mt-1.5 animate-in fade-in slide-in-from-top-2 duration-200 rounded-none">
-              <div className="flex items-center justify-between border-b border-gray-50 pb-2">
-                <h3 className="text-xs font-black text-gray-900 uppercase tracking-wider">Messages récents</h3>
-                <span className="text-[9px] font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-none border border-blue-100">1 non lu</span>
-              </div>
- 
-              <div className="divide-y divide-gray-50 max-h-60 overflow-y-auto pr-1">
-                {mockMessages.map((msg) => (
-                  <div 
-                    key={msg.id} 
-                    className="py-3 flex gap-3 cursor-pointer hover:bg-slate-50/50 px-1.5 transition-colors rounded-none"
-                    onClick={() => router.push("/student/dashboard")} // Mock nav
-                  >
-                    <div className="w-8 h-8 bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-[10px] shrink-0 rounded-none border border-blue-100">
-                      {msg.initials}
-                    </div>
-                    <div className="min-w-0 flex-grow">
-                      <div className="flex items-center justify-between">
-                        <span className="text-[11px] font-bold text-gray-950 truncate">{msg.sender}</span>
-                        <span className="text-[8px] text-gray-400 font-semibold">{msg.time}</span>
-                      </div>
-                      <p className="text-[10px] text-gray-400 truncate mt-0.5 leading-normal">
-                        {msg.text}
-                      </p>
-                    </div>
-                    {msg.unread && (
-                      <div className="w-1.5 h-1.5 bg-blue-500 self-center shrink-0" />
-                    )}
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
- 
         {/* Notifications Dropdown */}
         <div className="relative" ref={notifsRef}>
           <button 
             onClick={() => {
               setNotifsOpen(!notifsOpen);
-              setMessagesOpen(false);
+              
             }}
             className={`w-10 h-10 rounded-none flex items-center justify-center transition-colors relative border border-transparent ${
               notifsOpen ? "bg-blue-50 text-blue-600 border-gray-200" : "bg-slate-50 text-gray-500 hover:bg-gray-100"

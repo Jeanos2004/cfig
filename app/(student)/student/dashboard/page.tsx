@@ -18,7 +18,7 @@ export default function StudentDashboardPage() {
   const [loading, setLoading] = useState(true);
 
   // Calendar state
-  const [currentDate] = useState(new Date("2026-06-24T12:00:00Z")); // Force date to mock "Today" based on DB data for demonstration
+  const [currentDate] = useState(new Date());
 
   const [isMounted, setIsMounted] = useState(false);
 
@@ -77,14 +77,15 @@ export default function StudentDashboardPage() {
   });
 
   // Collect all sessions from enrolled courses
-  const allSessions: { course: StudentCourse; session: any }[] = [];
-  enrolledCourses.forEach(course => {
-    (course.modules || []).forEach(module => {
-      (module.sessions || []).forEach(session => {
-        allSessions.push({ course, session });
+  let allSessions: { course: StudentCourse; session: any }[] = [];
+    const coursesToUse = enrolledCourses.length > 0 ? enrolledCourses : courses;
+    coursesToUse.forEach(course => {
+      (course.modules || []).forEach(module => {
+        (module.sessions || []).forEach(session => {
+          allSessions.push({ course, session });
+        });
       });
     });
-  });
 
   // Sort sessions chronologically
   allSessions.sort((a, b) => new Date(a.session.date).getTime() - new Date(b.session.date).getTime());
@@ -94,7 +95,7 @@ export default function StudentDashboardPage() {
   const todaysSessions = allSessions.filter(s => s.session.date.startsWith(todayStr));
 
   // Filter upcoming sessions (strictly after today)
-  let upcomingSessions = allSessions.filter(s => new Date(s.session.date).getTime() > currentDate.getTime() && !s.session.date.startsWith(todayStr)); if (upcomingSessions.length === 0) { const allCatSessions: any[] = []; courses.forEach(course => { (course.modules || []).forEach(module => { (module.sessions || []).forEach(session => { allCatSessions.push({ course, session }); }); }); }); upcomingSessions = allCatSessions.filter(s => new Date(s.session.date).getTime() > currentDate.getTime() && !s.session.date.startsWith(todayStr)).sort((a, b) => new Date(a.session.date).getTime() - new Date(b.session.date).getTime()); } upcomingSessions = upcomingSessions.slice(0, 4);
+  const upcomingSessions = allSessions.filter(s => new Date(s.session.date).getTime() > currentDate.getTime() && !s.session.date.startsWith(todayStr)).slice(0, 4);
 
   const formattedDate = currentDate.toLocaleDateString("fr-FR", {
     weekday: "long",
