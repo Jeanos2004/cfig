@@ -191,7 +191,7 @@ export default function AdminPage() {
   const [selectedStudent, setSelectedStudent] = useState<StudentProfile | null>(null);
   const [studentSearchQuery, setStudentSearchQuery] = useState("");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [studentCourses, setStudentCourses] = useState<StudentCourse[]>([]);
+  
   
   // Student courses states
   
@@ -307,7 +307,7 @@ export default function AdminPage() {
     setTestimonials(await db.getTestimonials());
     setGallery(await db.getGallery());
     setStudents(await db.getStudents());
-    setStudentCourses(await studentDb.getCourses());
+    
     
     
     const siteSettings = await db.getSettings();
@@ -503,6 +503,7 @@ export default function AdminPage() {
     setNewModulePlanning([]);
     setNewModuleProgramme([{ title: "", points: "" }]);
     setNewModuleSessions([]);
+    setNewModuleSessions([]);
   };
 
   // 1. Formations CRUD
@@ -544,6 +545,7 @@ export default function AdminPage() {
         ...(newModuleMethodePaiement.trim() && { methodePaiement: newModuleMethodePaiement.trim() }),
         ...(newModuleImage.trim() && { image: newModuleImage.trim() }),
         details,
+        sessions: newModuleSessions,
       };
 
       if (editingModule !== null) {
@@ -613,6 +615,7 @@ export default function AdminPage() {
     setNewModuleProgramme(
       d?.programme?.map(p => ({ title: p.title, points: p.points.join("\n") })) ?? [{ title: "", points: "" }]
     );
+    setNewModuleSessions(mod.sessions || []);
     setNewModuleSessions(mod.sessions || []);
     setEditingModule({ catIndex, modIndex, oldTitle: mod.titre });
     setShowAddModuleModal(true);
@@ -859,6 +862,51 @@ export default function AdminPage() {
     item.message.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  // --- UPCOMING CLASSES CALCULATION ---
+  const upcomingClasses = useMemo(() => {
+    const joursSemaine = ["Dimanche", "Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi"];
+    const now = new Date();
+    const todayIndex = now.getDay();
+    const tomorrowIndex = (todayIndex + 1) % 7;
+    const todayName = joursSemaine[todayIndex];
+    const tomorrowName = joursSemaine[tomorrowIndex];
+
+    const todayStr = now.toISOString().split('T')[0];
+    const tomorrowDate = new Date(now);
+    tomorrowDate.setDate(tomorrowDate.getDate() + 1);
+    const tomorrowStr = tomorrowDate.toISOString().split('T')[0];
+
+    const upcoming: { catIndex: number, modIndex: number, modTitre: string, jour: string, horaire: string }[] = [];
+
+    formations.forEach((cat, catIndex) => {
+      cat.modules.forEach((mod, modIndex) => {
+        if (mod.details?.planning) {
+          mod.details.planning.forEach((p: any) => {
+            const isToday = p.jour.toLowerCase() === todayName.toLowerCase();
+            const isTomorrow = p.jour.toLowerCase() === tomorrowName.toLowerCase();
+            
+            if (isToday || isTomorrow) {
+              const targetDateStr = isToday ? todayStr : tomorrowStr;
+              const hasSession = (mod.sessions || []).some(s => s.date.startsWith(targetDateStr));
+              
+              if (!hasSession) {
+                upcoming.push({
+                  catIndex,
+                  modIndex,
+                  modTitre: mod.titre,
+                  jour: p.jour,
+                  horaire: p.horaire
+                });
+              }
+            }
+          });
+        }
+      });
+    });
+
+    return upcoming;
+  }, [formations]);
+
   if (isAuthChecking) {
     return (
       <div className="min-h-screen bg-[var(--color-primary)] flex items-center justify-center p-4 font-sans text-white">
@@ -939,36 +987,7 @@ export default function AdminPage() {
     );
   }
 
-  // --- UPCOMING CLASSES CALCULATION ---
-  const upcomingClasses = useMemo(() => {
-    const joursSemaine = ["Dimanche", "Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi"];
-    const todayIndex = new Date().getDay();
-    const tomorrowIndex = (todayIndex + 1) % 7;
-    const todayName = joursSemaine[todayIndex];
-    const tomorrowName = joursSemaine[tomorrowIndex];
 
-    const upcoming: { catIndex: number, modIndex: number, modTitre: string, jour: string, horaire: string }[] = [];
-
-    formations.forEach((cat, catIndex) => {
-      cat.modules.forEach((mod, modIndex) => {
-        if (mod.details?.planning) {
-          mod.details.planning.forEach((p: any) => {
-            if (p.jour.toLowerCase() === todayName.toLowerCase() || p.jour.toLowerCase() === tomorrowName.toLowerCase()) {
-              upcoming.push({
-                catIndex,
-                modIndex,
-                modTitre: mod.titre,
-                jour: p.jour,
-                horaire: p.horaire
-              });
-            }
-          });
-        }
-      });
-    });
-
-    return upcoming;
-  }, [formations]);
 
   return (
     <div className="h-screen bg-[var(--color-gray)] flex font-sans text-gray-800 overflow-hidden">
@@ -1792,7 +1811,7 @@ export default function AdminPage() {
                           {selectedStudent.enrolledCourses && selectedStudent.enrolledCourses.length > 0 ? (
                             <div className="space-y-3">
                               {selectedStudent.enrolledCourses.map((courseId) => {
-                                const matchedCourse = studentCourses.find((c: StudentCourse) => c.id === courseId);
+                                const matchedCourse = ([] as any[]).find((c: any) => c.id === courseId);
                                 if (!matchedCourse) return null;
 
                                 // Calculate progress
@@ -1847,7 +1866,7 @@ export default function AdminPage() {
                         <div className="pt-4 border-t border-gray-150 space-y-3">
                           <h4 className="text-[10px] font-extrabold uppercase tracking-wider text-gray-400">Inscrire manuellement à un cours</h4>
                           
-                          {studentCourses.filter((c: StudentCourse) => !selectedStudent.enrolledCourses?.includes(c.id)).length > 0 ? (
+                          {([ ] as any[]).filter((c: StudentCourse) => !selectedStudent.enrolledCourses?.includes(c.id)).length > 0 ? (
                             <div className="flex gap-3">
                               <select
                                 id="admin-enroll-course-select"
@@ -1864,7 +1883,7 @@ export default function AdminPage() {
                                 }}
                               >
                                 <option value="" disabled>Sélectionner un cours du catalogue...</option>
-                                {studentCourses
+                                {([ ] as any[])
                                   .filter((c: StudentCourse) => !selectedStudent.enrolledCourses?.includes(c.id))
                                   .map((c: StudentCourse) => (
                                     <option key={c.id} value={c.id}>
@@ -2783,6 +2802,56 @@ export default function AdminPage() {
                 )}
 
                 {/* === ONGLET 4: Programme Détaillé === */}
+                
+                {modalTab === 5 && (
+                  <div className="space-y-6">
+                    <div className="flex justify-between items-center bg-gray-50 p-4 border border-gray-200">
+                      <div>
+                        <h4 className="text-xs font-bold text-gray-900 uppercase">Séances & Agenda</h4>
+                        <p className="text-[10px] text-gray-500">Ajoutez les dates, heures, lieux et liens Zoom des séances.</p>
+                      </div>
+                      <button type="button" onClick={() => setNewModuleSessions([...newModuleSessions, { id: 'session-'+Date.now(), title: 'Nouvelle séance', date: new Date().toISOString(), duration: '2 heures', location: 'Siège CFIG', meetUrl: '', resources: [] }])} className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-900 text-white text-[10px] uppercase font-bold hover:bg-[var(--color-primary)] transition-colors">
+                        <Plus className="w-3.5 h-3.5" /> Nouvelle Séance
+                      </button>
+                    </div>
+
+                    <div className="space-y-4">
+                      {newModuleSessions.map((session, sIdx) => (
+                        <div key={session.id} className="border border-gray-200 p-4 relative bg-slate-50">
+                          <button type="button" onClick={() => setNewModuleSessions(newModuleSessions.filter((_, i) => i !== sIdx))} className="absolute top-4 right-4 text-gray-400 hover:text-red-600 transition-colors">
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                              <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1">Titre de la séance</label>
+                              <input type="text" value={session.title} onChange={e => { const list = [...newModuleSessions]; list[sIdx].title = e.target.value; setNewModuleSessions(list); }} className="w-full border border-gray-300 px-3 py-2 text-sm focus:border-[var(--color-primary)] outline-none bg-white" placeholder="Ex: Introduction à Excel" />
+                            </div>
+                            <div>
+                              <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1">Date et Heure (Format ISO)</label>
+                              <input type="datetime-local" value={session.date.slice(0,16)} onChange={e => { const list = [...newModuleSessions]; list[sIdx].date = new Date(e.target.value).toISOString(); setNewModuleSessions(list); }} className="w-full border border-gray-300 px-3 py-2 text-sm focus:border-[var(--color-primary)] outline-none bg-white" />
+                            </div>
+                            <div>
+                              <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1">Durée</label>
+                              <input type="text" value={session.duration} onChange={e => { const list = [...newModuleSessions]; list[sIdx].duration = e.target.value; setNewModuleSessions(list); }} className="w-full border border-gray-300 px-3 py-2 text-sm focus:border-[var(--color-primary)] outline-none bg-white" placeholder="Ex: 2 heures" />
+                            </div>
+                            <div>
+                              <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1">Lieu</label>
+                              <input type="text" value={session.location} onChange={e => { const list = [...newModuleSessions]; list[sIdx].location = e.target.value; setNewModuleSessions(list); }} className="w-full border border-gray-300 px-3 py-2 text-sm focus:border-[var(--color-primary)] outline-none bg-white" placeholder="Ex: Salle A, Siège CFIG" />
+                            </div>
+                            <div className="md:col-span-2">
+                              <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1">Lien Zoom / Meet (Optionnel)</label>
+                              <input type="url" value={session.meetUrl || ""} onChange={e => { const list = [...newModuleSessions]; list[sIdx].meetUrl = e.target.value; setNewModuleSessions(list); }} className="w-full border border-gray-300 px-3 py-2 text-sm focus:border-[var(--color-primary)] outline-none bg-white" placeholder="Ex: https://zoom.us/j/123456" />
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                      {newModuleSessions.length === 0 && (
+                        <p className="text-xs text-gray-400 text-center py-4 italic">Aucune séance définie. Les étudiants ne verront aucun agenda pour ce cours.</p>
+                      )}
+                    </div>
+                  </div>
+                )}
+
                 
                 {modalTab === 5 && (
                   <div className="space-y-6">
